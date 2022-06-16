@@ -1,0 +1,25 @@
+import time
+import os
+from shutil import copy2
+import pathlib
+
+configfile: "config/config.yaml"
+SAMPLES = config['SAMPLES']
+
+OUTDIR = config['parameters']['outdir'] + "/"
+
+
+
+
+onstart:
+    print("This is MABA16S")
+    time.sleep(1)
+
+    # copy the config file to output dir
+    pathlib.Path(OUTDIR).mkdir(parents=True, exist_ok=True)
+    copy2('config/config.yaml', OUTDIR )
+
+
+    for i in SAMPLES.items():
+        print(i[0], '\t', i[1])
+    print(f'output directory is: {OUTDIR}')

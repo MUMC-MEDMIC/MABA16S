@@ -4,7 +4,7 @@ import sys
 from argparse import ArgumentParser
 import yaml
 import os
-from maba16s.scripts.renamer import renamer
+from scripts.renamer import renamer
 
 
 
@@ -19,7 +19,7 @@ def file_name_generator(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 
-def snakemake_in(samples, kmersize, outdir, minid, mincov):
+def snakemake_in(samples,  outdir, ):
     samplesdic = {}
     samplesdic['parameters'] = {}
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
@@ -51,12 +51,12 @@ def main(command_line=None):
             help="""rename barcode.fasta to
             samplenames supplied in a spreadsheet""")
 
-    unique.add_argument("-i",
+    rename.add_argument("-i",
                         required=True,
                         dest='input_directory',
 
                         )
-    unique.add_argument("--spreadsheet",
+    rename.add_argument("--spreadsheet",
                         required=True,
                         dest='spreadsheet',
                         help='supply a spreadsheet to rename samples'
