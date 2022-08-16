@@ -27,8 +27,20 @@ onstart:
 
 rule all: 
     input:
-        expand(OUTDIR + "reads/{sample}.fastq.gz", sample = SAMPLES)
+        expand(OUTDIR + "{sample}/krakenreport.txt", sample = SAMPLES)
  
+
+rule download_kraken2_db:
+    output:
+        "db/silva"
+    threads: 1
+    conda:
+        "envs/kraken2.yaml"
+    shell:
+        "kraken2-build --db {output} --special silva"
+
+
+
 rule combinereads:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
@@ -37,4 +49,20 @@ rule combinereads:
     threads: 1 
     shell:
         "cat {input}/*fastq.gz > {output}"
+
+
+rule kraken2:
+    input: 
+        rules.combinereads.output
+    output:
+        report = OUTDIR + "{sample}/krakenreport.txt",
+        out = OUTDIR + "{sample}/output.txt"
+    threads: 1
+    conda:
+        "envs/kraken2.yaml"
+    shell:
+        """
+        kraken2 --db rules.download_kraken2_db.output --report {output.report}
+        -o {output.out} 
+        """ 
 
