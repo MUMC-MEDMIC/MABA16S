@@ -7,9 +7,7 @@ configfile: "config/config.yaml"
 SAMPLES = config['SAMPLES']
 
 OUTDIR = config['parameters']['outdir'] + "/"
-
-
-
+print(SAMPLES)
 
 onstart:
     print("This is MABA16S")
@@ -26,16 +24,16 @@ onstart:
 
 
 
-"""
+
 rule all: 
     input:
-        OUTDIR + "reads/{sample}.fastq.gz"
-""" 
+        expand(OUTDIR + "reads/{sample}.fastq.gz", sample = SAMPLES)
+ 
 rule combinereads:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
     output:
-        temp(OUTDIR + "reads/{sample}.fastq.gz")
+        OUTDIR + "reads/{sample}.fastq.gz"
     threads: 1 
     shell:
         "cat {input}/*fastq.gz > {output}"

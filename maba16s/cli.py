@@ -25,6 +25,7 @@ def snakemake_in(samples,  outdir, ):
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
     samplesdic["SAMPLES"] = {}
 
+
     # generate the samples dictionary as input for snakemake
     for i in samples:
         samplename = file_name_generator(i)
