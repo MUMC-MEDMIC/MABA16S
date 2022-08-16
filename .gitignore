@@ -1,3 +1,6 @@
+#snakemake
+.snakemake/
+
 # config stuff
 config/
 
