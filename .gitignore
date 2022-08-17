@@ -1,5 +1,6 @@
 #snakemake
 .snakemake/
+db/
 
 # config stuff
 config/

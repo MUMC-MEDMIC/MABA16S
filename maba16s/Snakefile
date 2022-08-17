@@ -22,7 +22,9 @@ onstart:
         print(i[0], '\t', i[1])
     print(f'output directory is: {OUTDIR}')
 
-
+onerror:
+    print(f"these were the samples: {SAMPLES}")
+    print("error has occured")
 
 
 rule all: 
@@ -32,7 +34,7 @@ rule all:
 
 rule download_kraken2_db:
     output:
-        "db/silva"
+        directory("db/silva")
     threads: 1
     conda:
         "envs/kraken2.yaml"
@@ -53,16 +55,19 @@ rule combinereads:
 
 rule kraken2:
     input: 
-        rules.combinereads.output
+        reads = rules.combinereads.output,
+        db = rules.download_kraken2_db.output
     output:
         report = OUTDIR + "{sample}/krakenreport.txt",
         out = OUTDIR + "{sample}/output.txt"
-    threads: 1
+    threads: 4
     conda:
         "envs/kraken2.yaml"
+    log:
+        OUTDIR + "log/kraken2/{sample}.txt"
     shell:
         """
-        kraken2 --db rules.download_kraken2_db.output --report {output.report}
-        -o {output.out} 
+        kraken2 --db {input.db} -t {threads}  --report {output.report} \ 
+        {input.reads} > {output.out} 
         """ 
 

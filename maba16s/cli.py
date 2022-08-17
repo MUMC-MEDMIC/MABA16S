@@ -102,7 +102,7 @@ def main(command_line=None):
                 )
 
         os.chdir(f"{locationrepo}")
-        os.system(f"snakemake --cores {args.cores} --use-conda")
+        os.system(f"snakemake --cores {args.cores} --use-conda -p")
 
     else:
         parser.print_usage()
