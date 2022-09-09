@@ -86,9 +86,18 @@ def reads_to_extract(file):
 rule genus_read_extract:
     input:
         report = rules.kraken2.output.report_filtered,
-        read = rules.kraken2.output.out
-    threads:
-        4
+        krakenfile = rules.kraken2.output.out
+        taxid = 
     output:
+        reads = lambda wildcards[
+    threads:
+        1
+    shell:
+        """
+        extract_kraken_reads.py  -k {input.krakenfile} -s {input.seq} -t {input.taxid} -o {output.reads} 
+        """ 
+
+
+
         
 
