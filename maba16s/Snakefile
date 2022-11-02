@@ -1,3 +1,4 @@
+import time
 import os
 from shutil import copy2
 import pathlib
@@ -30,8 +31,8 @@ localrules: all, download_kraken2_db, combinereads
 
 rule all:
     input:
-        expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES)
-
+        expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES),
+        expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES)
 
 rule download_kraken2_db:
     output:
@@ -57,7 +58,6 @@ rule kraken2:
         db = rules.download_kraken2_db.output
     output:
         report = OUTDIR + "kraken2/{sample}/krakenreport.txt",
-        report_filtered = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
         out = OUTDIR + "kraken2/{sample}/output.txt"
     threads: 4
     conda:
@@ -67,18 +67,17 @@ rule kraken2:
     shell:
         "kraken2 --db {input.db} -t {threads} "
         "--report {output.report} {input.reads} > {output.out} "
-        "&& python scripts/kraken2report.py {output.report} {output.report_filtered}"
 
 
 rule strip_genera:
     input:
         rules.kraken2.output.report
     output:
-        OUTDIR + "{sample}/krakenreport_filtered.txt"
+        OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt"
     params:
-        reads_cutoff_genus = 1
+        reads_cutoff_genus = 50
     shell:
-        "python scripts/kraken2report.py {input} {output} {params.reads_cutoff_genus}"
+        '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output}'''
 
 
 def reads_to_extract(file):
@@ -87,7 +86,7 @@ def reads_to_extract(file):
 
     return data.to_list()
 
-
+'''
 rule genus_read_extract:
     input:
         report = rules.kraken2.output.report_filtered,
@@ -101,3 +100,4 @@ rule genus_read_extract:
         """
         extract_kraken_reads.py  -k {input.krakenfile} -s {input.seq} -t {input.taxid} -o {output.reads}
         """
+'''
