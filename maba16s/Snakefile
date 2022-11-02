@@ -29,7 +29,8 @@ onerror:
 
 rule all: 
     input:
-        expand(OUTDIR + "{sample}/krakenreport.txt", sample = SAMPLES)
+        expand(OUTDIR + "{sample}/krakenreport.txt", sample = SAMPLES),
+        expand(OUTDIR + "{sample}/krakenreport_filtered.txt", sample = SAMPLES)
  
 
 rule download_kraken2_db:
@@ -67,7 +68,16 @@ rule kraken2:
         OUTDIR + "log/kraken2/{sample}.txt"
     shell:
         """
-        kraken2 --db {input.db} -t {threads}  --report {output.report} \ 
-        {input.reads} > {output.out} 
+        kraken2 --db {input.db} -t {threads}  --report {output.report} {input.reads} > {output.out} 
         """ 
+rule strip_genera:
+    input:
+        rules.kraken2.output.report
+    output:
+        OUTDIR + "{sample}/krakenreport_filtered.txt"
+    params:
+        reads_cutoff_genus = 1
+    shell:
+        "python scripts/kraken2report.py {input} {output} {params.reads_cutoff_genus}" 
+
 
