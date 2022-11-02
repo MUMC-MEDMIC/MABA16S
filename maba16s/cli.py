@@ -6,8 +6,6 @@ import yaml
 import os
 from scripts.renamer import renamer
 
-
-
 locationrepo = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -24,7 +22,6 @@ def snakemake_in(samples,  outdir, ):
     samplesdic['parameters'] = {}
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
     samplesdic["SAMPLES"] = {}
-
 
     # generate the samples dictionary as input for snakemake
     for i in samples:
@@ -62,7 +59,7 @@ def main(command_line=None):
                         dest='spreadsheet',
                         help='supply a spreadsheet to rename samples'
                         )
-                            
+
     # add snakemake pipeline to completely run fasta to 16S report
     snakemake = subparsers.add_parser("snakemake",
                                       help='''run the entire workflow on 16S
@@ -91,9 +88,8 @@ def main(command_line=None):
     if args.mode == "rename":
         renamer(
                 input_file=args.input_directory,
-                spreadsheet=args.spreadsheet                
+                spreadsheet=args.spreadsheet
                 )
-
 
     elif args.mode == "snakemake":
         snakemake_in(
