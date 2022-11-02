@@ -2,6 +2,7 @@ import time
 import os
 from shutil import copy2
 import pathlib
+import pandas as pd
 
 configfile: "config/config.yaml"
 SAMPLES = config['SAMPLES']
@@ -27,11 +28,12 @@ onerror:
     print("error has occured")
 
 
-rule all: 
+localrules: all, download_kraken2_db, combinereads
+
+rule all:
     input:
-        expand(OUTDIR + "{sample}/krakenreport.txt", sample = SAMPLES),
-        expand(OUTDIR + "{sample}/krakenreport_filtered.txt", sample = SAMPLES)
- 
+        expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample = SAMPLES)
+
 
 rule download_kraken2_db:
     output:
@@ -48,19 +50,20 @@ rule combinereads:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
     output:
-        OUTDIR + "reads/{sample}.fastq.gz"
-    threads: 1 
+        temp(OUTDIR + "reads/{sample}.fastq.gz")
+    threads: 1
     shell:
         "cat {input}/*fastq.gz > {output}"
 
 
 rule kraken2:
-    input: 
+    input:
         reads = rules.combinereads.output,
         db = rules.download_kraken2_db.output
     output:
-        report = OUTDIR + "{sample}/krakenreport.txt",
-        out = OUTDIR + "{sample}/output.txt"
+        report = OUTDIR + "kraken2/{sample}/krakenreport.txt",
+        report_filtered = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
+        out = OUTDIR + "kraken2/{sample}/output.txt"
     threads: 4
     conda:
         "envs/kraken2.yaml"
@@ -68,8 +71,10 @@ rule kraken2:
         OUTDIR + "log/kraken2/{sample}.txt"
     shell:
         """
-        kraken2 --db {input.db} -t {threads}  --report {output.report} {input.reads} > {output.out} 
-        """ 
+        kraken2 --db {input.db} -t {threads}  --report {output.report} {input.reads} > {output.out} &&
+        python scripts/kraken2report.py {output.report} {output.report_filtered}
+        """
+
 rule strip_genera:
     input:
         rules.kraken2.output.report
@@ -78,6 +83,27 @@ rule strip_genera:
     params:
         reads_cutoff_genus = 1
     shell:
-        "python scripts/kraken2report.py {input} {output} {params.reads_cutoff_genus}" 
+        "python scripts/kraken2report.py {input} {output} {params.reads_cutoff_genus}"
 
 
+def reads_to_extract(file):
+    df = pd_read_csv(file, sep = '\t')
+    data = df[['taxname', 'taxID']]
+
+    return data.to_list()
+
+
+
+rule genus_read_extract:
+    input:
+        report = rules.kraken2.output.report_filtered,
+        krakenfile = rules.kraken2.output.out
+        taxid =
+    output:
+        reads = lambda wildcards[
+    threads:
+        1
+    shell:
+        """
+        extract_kraken_reads.py  -k {input.krakenfile} -s {input.seq} -t {input.taxid} -o {output.reads}
+        """
