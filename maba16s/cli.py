@@ -80,6 +80,12 @@ def main(command_line=None):
 
     snakemake.add_argument("-o", required=True, dest="outdir")
 
+    snakemake.add_argument(
+                            "--snakemake-params",
+                            required=False,
+                            dest="smkparams",
+                            )
+
 ####################
 # parsing part
 ####################
@@ -98,7 +104,10 @@ def main(command_line=None):
                 )
 
         os.chdir(f"{locationrepo}")
-        os.system(f"snakemake --cores {args.cores} --use-conda -p")
+
+        if args.smkparams == None:
+            args.smkparams=""
+        os.system(f"snakemake --cores {args.cores} --use-conda {args.smkparams}")
 
     else:
         parser.print_usage()
