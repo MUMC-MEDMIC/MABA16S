@@ -8,7 +8,6 @@ configfile: "config/config.yaml"
 SAMPLES = config['SAMPLES']
 
 OUTDIR = config['parameters']['outdir'] + "/"
-print(SAMPLES)
 
 onstart:
     print("This is MABA16S")
@@ -32,7 +31,9 @@ localrules: all, download_kraken2_db, combinereads
 rule all:
     input:
         expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES),
-        expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES)
+        expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES),
+        expand(OUTDIR + "kraken2/{sample}/genus", sample=SAMPLES)
+
 
 rule download_kraken2_db:
     output:
@@ -43,6 +44,7 @@ rule download_kraken2_db:
     shell:
         "kraken2-build --db {output} --special silva"
 
+
 rule combinereads:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
@@ -51,6 +53,7 @@ rule combinereads:
     threads: 1
     shell:
         "cat {input}/*fastq.gz > {output}"
+
 
 rule kraken2:
     input:
@@ -80,24 +83,26 @@ rule strip_genera:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output}'''
 
 
-def reads_to_extract(file):
-    df = pd_read_csv(file, sep='\t')
-    data = df[['taxname', 'taxID']]
+def extract_reads(krakenfile, outputdir):
+    with open(krakenfile) as file:
+        for line in file:
+            print(line)
 
-    return data.to_list()
 
-'''
 rule genus_read_extract:
     input:
-        report = rules.kraken2.output.report_filtered,
-        krakenfile = rules.kraken2.output.out
-        taxid =
+        report = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
+        krakenfile = rules.kraken2.output.out,
+        fastq = rules.combinereads.output
     output:
-        reads = lambda wildcards[
+        directory(OUTDIR + "kraken2/{sample}/genus")
     threads:
         1
+    conda:
+        "envs/kraken2.yaml"
+    log:
+        OUTDIR + "kraken2/{sample}/genusreadextract.log"
     shell:
-        """
-        extract_kraken_reads.py  -k {input.krakenfile} -s {input.seq} -t {input.taxid} -o {output.reads}
-        """
-'''
+        '''
+        python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output}
+        '''
