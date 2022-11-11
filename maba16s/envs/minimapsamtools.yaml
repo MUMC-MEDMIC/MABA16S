@@ -1,0 +1,8 @@
+name: kraken2
+channels:
+  - bioconda
+  - anaconda
+dependencies:
+  - python=3.6
+  - minimap2=2.24
+  - samtools=1.16.1
