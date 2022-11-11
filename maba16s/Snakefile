@@ -32,7 +32,8 @@ rule all:
     input:
         expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES),
         expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES),
-        expand(OUTDIR + "kraken2/{sample}/genus", sample=SAMPLES)
+        expand(OUTDIR + "kraken2/{sample}/genus", sample=SAMPLES),
+        expand(OUTDIR + 'kraken2consensus/{sample}/', sample=SAMPLES)
 
 
 rule download_kraken2_db:
@@ -101,8 +102,23 @@ rule genus_read_extract:
     conda:
         "envs/kraken2.yaml"
     log:
-        OUTDIR + "kraken2/{sample}/genusreadextract.log"
+        OUTDIR + "log/kraken2/{sample}/genusreadextract.log"
     shell:
         '''
         python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output}
         '''
+
+
+rule map_genera:
+    input:
+        readdir = rules.genus_read_extract.output,
+        ref = "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
+    output:
+        directory(OUTDIR + 'kraken2consensus/{sample}/')
+    threads: 1
+    conda:
+        "envs/minimapsamtools.yaml"
+    log:
+        OUTDIR + "log/map_genera/{sample}.log"
+    shell:
+        "python scripts/aligner.py {input.readdir} {input.ref} {output} 2> {log}"
