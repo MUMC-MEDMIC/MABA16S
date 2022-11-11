@@ -84,19 +84,13 @@ rule strip_genera:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output}'''
 
 
-def extract_reads(krakenfile, outputdir):
-    with open(krakenfile) as file:
-        for line in file:
-            print(line)
-
-
 rule genus_read_extract:
     input:
         report = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
         krakenfile = rules.kraken2.output.out,
         fastq = rules.combinereads.output
     output:
-        directory(OUTDIR + "kraken2/{sample}/genus")
+        temp(directory(OUTDIR + "kraken2/{sample}/genus"))
     threads:
         1
     conda:
