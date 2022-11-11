@@ -11,7 +11,8 @@ def run_minimap2(reads, reference, outdir, genusname):
     os.system(f'minimap2 -ax map-ont {reference} {reads} > {outdir}/{genusname}_consensus.sam')
     os.system(f'samtools view -b -S {outdir}/{genusname}_consensus.sam | samtools sort > {outdir}/{genusname}_consensus_sort.bam')
     os.system(f'rm {outdir}/*consensus.sam')
-    os.system(f'samtools consensus {outdir}/{genusname}_consensus_sort.bam > {outdir}/{genusname}_consensus.fasta')
+    os.system(f'mkdir -p {outdir}/fastas/')
+    os.system(f'samtools consensus {outdir}/{genusname}_consensus_sort.bam > {outdir}/fastas/{genusname}_consensus.fasta')
 
 
 def align_reads(indir, ref, outdir):
