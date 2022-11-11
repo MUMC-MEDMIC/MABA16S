@@ -2,5 +2,7 @@ name: kraken2
 channels:
   - bioconda
   - anaconda
+  - conda-forge
 dependencies:
-  - blast=2.13.0
+  - blast=2.12
+  - parallel
