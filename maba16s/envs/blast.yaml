@@ -1,0 +1,6 @@
+name: kraken2
+channels:
+  - bioconda
+  - anaconda
+dependencies:
+  - blast=2.13.0
