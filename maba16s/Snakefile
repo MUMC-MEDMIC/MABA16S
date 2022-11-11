@@ -33,7 +33,8 @@ rule all:
         expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES),
         expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES),
         expand(OUTDIR + "kraken2/{sample}/genus", sample=SAMPLES),
-        expand(OUTDIR + 'kraken2consensus/{sample}/', sample=SAMPLES)
+        expand(OUTDIR + 'kraken2consensus/{sample}/', sample=SAMPLES),
+        expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES)
 
 
 rule download_kraken2_db:
@@ -44,6 +45,20 @@ rule download_kraken2_db:
         "envs/kraken2.yaml"
     shell:
         "kraken2-build --db {output} --special silva"
+
+
+rule build_blast_db:
+    input:
+        "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
+    output:
+        "db/blastDB"
+    threads: 1
+    conda:
+        "envs/blast.yaml"
+    log:
+        "log/blastbuild_db.log"
+    shell:
+        "makeblastdb -in {input} -out {output} 2> {log}"
 
 
 rule combinereads:
@@ -116,3 +131,19 @@ rule map_genera:
         OUTDIR + "log/map_genera/{sample}.log"
     shell:
         "python scripts/aligner.py {input.readdir} {input.ref} {output} 2> {log}"
+
+
+rule blast_consensus_genera:
+    input:
+        db = rules.build_blast_db.output,
+        fastas = OUTDIR + 'kraken2consensus/{sample}/fastas'
+    output:
+        directory(OUTDIR + 'BLAST/{sample}')
+    threads:
+        4
+    conda:
+        "envs/blast.yaml"
+    log:
+        OUTDIR + 'log/blast_consensus_genera/{sample}.log'
+    shell:
+        "ls {input.fastas}/*fasta | parallel -i[] -j {threads} blastn -db {input.db} [] -out {output}/[/.]"
