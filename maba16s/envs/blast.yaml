@@ -6,3 +6,4 @@ channels:
 dependencies:
   - blast=2.12
   - parallel
+  - python=3.6
