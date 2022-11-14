@@ -51,14 +51,16 @@ rule build_blast_db:
     input:
         "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
     output:
-        "db/blastDB"
+        directory("db/blastDB")
     threads: 1
     conda:
         "envs/blast.yaml"
     log:
         "log/blastbuild_db.log"
+    params:
+        "db/blastDB"
     shell:
-        "makeblastdb -in {input} -out {output} 2> {log}"
+        "makeblastdb -in {input} -dbtype nucl -out {output}/blastDB 2> {log}"
 
 
 rule combinereads:
@@ -136,7 +138,7 @@ rule map_genera:
 rule blast_consensus_genera:
     input:
         db = rules.build_blast_db.output,
-        fastas = OUTDIR + 'kraken2consensus/{sample}/fastas'
+        fastas = rules.map_genera.output
     output:
         directory(OUTDIR + 'BLAST/{sample}')
     threads:
@@ -146,4 +148,4 @@ rule blast_consensus_genera:
     log:
         OUTDIR + 'log/blast_consensus_genera/{sample}.log'
     shell:
-        "ls {input.fastas}/*fasta | parallel -i[] -j {threads} blastn -db {input.db} [] -out {output}/[/.]"
+        "python scripts/blast_consensus.py {input.fastas}/fastas/ {threads} {input.db} {output} 2> {log} "
