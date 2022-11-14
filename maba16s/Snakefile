@@ -30,21 +30,19 @@ localrules: all, download_kraken2_db, combinereads
 
 rule all:
     input:
-        expand(OUTDIR + "kraken2/{sample}/krakenreport.txt", sample=SAMPLES),
-        expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample=SAMPLES),
-        expand(OUTDIR + "kraken2/{sample}/genus", sample=SAMPLES),
-        expand(OUTDIR + 'kraken2consensus/{sample}/', sample=SAMPLES),
         expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES)
 
 
 rule download_kraken2_db:
     output:
-        directory("db/silva")
+        "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
     threads: 1
     conda:
         "envs/kraken2.yaml"
+    params:
+        "db/silva"
     shell:
-        "kraken2-build --db {output} --special silva"
+        "kraken2-build --db {params} --special silva"
 
 
 rule build_blast_db:
