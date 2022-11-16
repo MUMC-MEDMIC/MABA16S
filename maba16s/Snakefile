@@ -74,7 +74,7 @@ rule combinereads:
 rule kraken2:
     input:
         reads = rules.combinereads.output,
-        db = rules.download_kraken2_db.output
+        db = rules.download_kraken2_db.params
     output:
         report = OUTDIR + "kraken2/{sample}/krakenreport.txt",
         out = OUTDIR + "kraken2/{sample}/output.txt"
