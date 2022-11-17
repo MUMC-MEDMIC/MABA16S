@@ -30,7 +30,8 @@ localrules: all, download_kraken2_db, combinereads
 
 rule all:
     input:
-        expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES)
+        expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
+        expand(OUTDIR + 'reports/{sample}', sample=SAMPLES)
 
 
 rule download_kraken2_db:
@@ -147,3 +148,18 @@ rule blast_consensus_genera:
         OUTDIR + 'log/blast_consensus_genera/{sample}.log'
     shell:
         "python scripts/blast_consensus.py {input.fastas}/fastas/ {threads} {input.db} {output} 2> {log} "
+
+
+rule generate_reports:
+    input:
+        blast = rules.blast_consensus_genera.output,
+
+    output:
+        directory(OUTDIR + "reports/{sample}")
+    threads: 1
+    conda:
+        "envs/kraken2.yaml" # this env has pandas
+    log:
+        OUTDIR + "log/reports/{sample}_report.log"
+    shell:
+        "python scripts/generate_reports.py {input.blast} {output} 2> {log}"
