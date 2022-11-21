@@ -107,7 +107,7 @@ def main(command_line=None):
 
         if args.smkparams == None:
             args.smkparams=""
-        os.system(f"snakemake --cores {args.cores} --use-conda {args.smkparams}")
+        os.system(f"snakemake --cores {args.cores} --use-conda {args.smkparams} --keep-going")
 
     else:
         parser.print_usage()
