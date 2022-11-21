@@ -59,6 +59,7 @@ def main():
     results = pd.DataFrame(results).T
     readcount = get_read_count(readfile)
     results['num_reads'] = [readcount[x] for x in results.index]
+    results = results.sort_values('num_reads', ascending = False)
     results.to_excel(outxls)
 
 
