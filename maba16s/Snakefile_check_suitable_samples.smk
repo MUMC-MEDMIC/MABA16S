@@ -5,13 +5,9 @@ import pathlib
 import pandas as pd
 
 configfile: "config/config.yaml"
-
+SAMPLES = config['SAMPLES']
 
 OUTDIR = config['parameters']['outdir'] + "/"
-configfile: OUTDIR + "config/config_good_samples.yaml"
-SAMPLES = config['GOODSAMPLES']
-
-
 
 onstart:
     print("This is MABA16S")
@@ -20,6 +16,7 @@ onstart:
     # copy the config file to output dir
     pathlib.Path(OUTDIR).mkdir(parents=True, exist_ok=True)
     copy2('config/config.yaml', OUTDIR)
+
     for i in SAMPLES.items():
         print(i[0], '\t', i[1])
     print(f'output directory is: {OUTDIR}')
@@ -33,13 +30,12 @@ localrules: all, download_kraken2_db, combinereads
 
 rule all:
     input:
-        expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
-        expand(OUTDIR + "reports/{sample}.xls", sample=SAMPLES)
+        OUTDIR + "config/config_good_samples.yaml"
 
 
 rule download_kraken2_db:
     output:
-        "db/silva"
+        directory("db/silva")
     threads: 1
     conda:
         "envs/kraken2.yaml"
@@ -103,66 +99,15 @@ rule strip_genera:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output}'''
 
 
-rule genus_read_extract:
+rule write_good_samples:
     input:
-        report = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
-        krakenfile = rules.kraken2.output.out,
-        fastq = rules.combinereads.output
+        expand(OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt", sample = SAMPLES)
     output:
-        temp(directory(OUTDIR + "kraken2/{sample}/genus"))
-    threads:
-        1
-    conda:
-        "envs/kraken2.yaml"
-    log:
-        OUTDIR + "log/kraken2/{sample}/genusreadextract.log"
-    shell:
-        '''
-        python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output}
-        '''
-
-
-rule map_genera:
-    input:
-        readdir = rules.genus_read_extract.output,
-        ref = "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
-    output:
-        directory(OUTDIR + 'kraken2consensus/{sample}/')
-    threads: 1
-    conda:
-        "envs/minimapsamtools.yaml"
-    log:
-        OUTDIR + "log/map_genera/{sample}.log"
-    shell:
-        "python scripts/aligner.py {input.readdir} {input.ref} {output} 2> {log}"
-
-
-rule blast_consensus_genera:
-    input:
-        db = rules.build_blast_db.output,
-        fastas = rules.map_genera.output
-    output:
-        directory(OUTDIR + 'BLAST/{sample}')
-    threads:
-        4
-    conda:
-        "envs/blast.yaml"
-    log:
-        OUTDIR + 'log/blast_consensus_genera/{sample}.log'
-    shell:
-        "python scripts/blast_consensus.py {input.fastas}/fastas/ {threads} {input.db} {output} 2> {log} "
-
-
-rule generate_reports:
-    input:
-        blast = rules.blast_consensus_genera.output,
-        readcount = rules.strip_genera.output
-    output:
-        OUTDIR + "reports/{sample}.xls"
-    threads: 1
-    conda:
-        "envs/kraken2.yaml" # this env has pandas
-    log:
-        OUTDIR + "log/reports/{sample}_report.log"
-    shell:
-        "python scripts/generate_reports.py {input.blast} {output} {input.readcount} 2> {log}"
+        OUTDIR + "config/config_good_samples.yaml"
+    run:
+        with open(output[0], "w") as outfile:
+            outfile.write("GOODSAMPLES: \n")
+            for f in input:
+                if os.path.getsize(f) > 0:
+                    samplename = f.split("/")[-2]
+                    outfile.write("  "+ samplename + ": " + SAMPLES[samplename] + "\n")
