@@ -3,6 +3,7 @@ channels:
   - bioconda
   - anaconda
 dependencies:
+  - conda-forge::ncurses
   - python=3.6
   - minimap2=2.24
   - samtools=1.16.1
