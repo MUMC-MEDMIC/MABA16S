@@ -110,7 +110,7 @@ def main(command_line=None):
         exitstatus = os.system(f"snakemake --cores {args.cores} --use-conda {args.smkparams} --snakefile Snakefile_check_suitable_samples.smk")
         if exitstatus > 0:
             sys.exit("pre-workflow crashed")
-        os.system(f"snakemake -p --cores {args.cores} --use-conda {args.smkparams}")
+        os.system(f"snakemake -p --cores {args.cores} --use-conda {args.smkparams} --notemp --keep-going")
 
     else:
         parser.print_usage()
