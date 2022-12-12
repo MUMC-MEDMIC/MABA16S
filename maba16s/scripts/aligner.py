@@ -22,7 +22,7 @@ def align_reads(indir, ref, outdir):
         catch_right_ref(genusname, ref, outdir)
         run_minimap2(
             reads=file,
-            reference=outdir + genusname + '_reference.fasta',
+            reference=outdir + "/" genusname + '_reference.fasta',
             outdir=outdir,
             genusname=genusname)
 
