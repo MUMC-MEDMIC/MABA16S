@@ -100,7 +100,7 @@ rule strip_genera:
     params:
         reads_cutoff_genus = 50
     log: 
-        OUTDIR + "{sample}/stripgenera.txt"
+        OUTDIR + "log/{sample}/stripgenera.txt"
     shell:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output} 2> {log}'''
 
