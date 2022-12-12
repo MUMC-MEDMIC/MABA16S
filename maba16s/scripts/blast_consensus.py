@@ -12,7 +12,9 @@ def main():
     for fasta in files:
         genusname = os.path.basename(fasta).split(".")[0]
         os.system(f'mkdir -p {output}')
-        os.system(f'blastn -db {db}/blastDB -query {fasta} -num_threads {threads} -out {output}/{genusname}.txt -outfmt "6 pident length bitscore stitle"')
+        command = f'blastn -db {db}/blastDB -query {fasta} -num_threads {threads} -out {output}/{genusname}.txt -outfmt "6 pident length bitscore stitle"'
+        print(command, file=sys.stderr)
+        os.system(command)
 
 
 if __name__ == "__main__":
