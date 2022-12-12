@@ -3,10 +3,14 @@ import pandas as pd
 import glob
 import os
 
-percentage_from_max_bitscore = 0.90
+percentage_from_max_bitscore = 0.99
 percentage_from_max_seqid = 0.35
 
 def read_blastn(file):
+    # if statement is to catch when blast was unable to get a match due to empty consensus or NNNNNNN as consensus
+    if os.path.getsize(file) == 0:
+        df = "No hits or no good consensus"
+        return df
     df = pd.read_csv(file, sep="\t")
     df.columns = ['percentage', 'length', 'bitscore', 'taxonomy']
     df = score_top_hits(df)
@@ -36,7 +40,7 @@ def get_species(value):
     return species
 
 def get_read_count(file):
-    data = pd.read_csv(file, sep="\t")
+    data = pd.read_csv(file, sep="\t", header = None)
     data.columns = ["percentage", "reads_in","reads_out", "taxlvl", "taxid", "name"]
     data["name"] = data.name.apply(lambda x: x.strip())
     data = data.set_index("name")
@@ -51,6 +55,7 @@ def main():
     readfile = sys.argv[3]
 
     results = {}
+
     for file in glob.glob(blastindir + "/*consensus.txt"):
         data = read_blastn(file)
         genus = os.path.basename(file).split("_consensus.txt")[0]
