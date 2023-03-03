@@ -47,7 +47,7 @@ How does it work?
 2. reads for each genus are extracted
 3. each genus readset is mapped to the first species in the SILVA database of this genus
 4. consensus sequence is extracted and BLASTed to the SILVA database to obtain a species ID
-4. results are compiled and written to a spreadsheet
+5. results are compiled and written to a spreadsheet
 
 Credits
 -------
