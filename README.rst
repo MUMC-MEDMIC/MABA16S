@@ -26,11 +26,26 @@ Oxford nanopore 16S for clinical samples
 * Free software: MIT license
 * Documentation: https://maba16s.readthedocs.io.
 
+Quickstart
+----------
+as a quickstart to use this pipeline you need Python 3.6 or higher, conda environment manager  and snakemake.
 
-Features
---------
+Usage:
+'''
+git clone https://github.com/MUMC-MEDMIC/MABA16S
+cd MABA16S/maba16s
+python cli.py snakemake -i folders_containing_nanopore16s_reads -o my_output_directory --cores 1 
+'''
+input are directories which hold your nanopore reads. Naming of the output will be done based on the names of these directories
 
-* TODO
+
+How does it work?
+-----------------
+1. reads are classified on genus level using kraken2 and SILVA database
+2. reads for each genus are extracted
+3. each genus readset is mapped to the first species in the SILVA database of this genus
+4. consensus sequence is extracted and BLASTed to the SILVA database to obtain a species ID
+4. results are compiled and written to a spreadsheet
 
 Credits
 -------
