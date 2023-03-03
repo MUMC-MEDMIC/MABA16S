@@ -28,14 +28,14 @@ Oxford nanopore 16S for clinical samples
 
 Quickstart
 ----------
-as a quickstart to use this pipeline you need Python 3.6 or higher, conda environment manager  and snakemake.
+As a quickstart to use this pipeline you need Python 3.6 or higher, conda environment manager  and snakemake.
 
 Usage:
-``
-git clone https://github.com/MUMC-MEDMIC/MABA16S
-cd MABA16S/maba16s
-python cli.py snakemake -i folders_containing_nanopore16s_reads -o my_output_directory --cores 1 
-``
+.. code-block:: bash
+    git clone https://github.com/MUMC-MEDMIC/MABA16S
+    cd MABA16S/maba16s
+    python cli.py snakemake -i folders_containing_nanopore16s_reads -o my_output_directory --cores 1 
+
 input are directories which hold your nanopore reads. Naming of the output will be done based on the names of these directories
 
 
