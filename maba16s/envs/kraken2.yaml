@@ -3,6 +3,7 @@ channels:
   - bioconda
   - anaconda
 dependencies:
+  - python=3.6
   - kraken2=2.1.2
   - krakentools=1.2
   - pandas
