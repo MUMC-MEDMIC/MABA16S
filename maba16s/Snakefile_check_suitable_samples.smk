@@ -68,7 +68,7 @@ rule combinereads:
         temp(OUTDIR + "reads/{sample}.fastq.gz")
     threads: 1
     shell:
-        "cat {input}/*fastq.gz > {output}"
+        "cat {input}/*fastq* > {output}"
 
 
 rule kraken2:
