@@ -34,7 +34,8 @@ localrules: all, download_kraken2_db, combinereads
 rule all:
     input:
         expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
-        expand(OUTDIR + "reports/{sample}.xls", sample=SAMPLES)
+        expand(OUTDIR + "reports/{sample}.xls", sample=SAMPLES),
+        expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES)
 
 
 rule download_kraken2_db:
@@ -168,3 +169,16 @@ rule generate_reports:
         OUTDIR + "log/{sample}/report.log"
     shell:
         "python scripts/generate_reports.py {input.blast} {output} {input.readcount} 2> {log}"
+
+rule make_sankeys:
+    input:
+        rules.generate_reports.output
+    output:
+        OUTDIR + "sankeys/{sample}_sankey.html"
+    threads: 1 
+    conda:
+        "envs/plotly.yaml"
+    log:
+        OUTDIR + "log/make_sankey/{sample}.log"
+    shell:
+        "python scripts/sankey_report.py {input} {output}"
