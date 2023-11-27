@@ -1,0 +1,8 @@
+name: plotly
+channels:
+  - bioconda
+  - anaconda
+  - conda-forge
+dependencies:
+  - pandas
+  - plotly
