@@ -10,7 +10,7 @@ def extract_reads(speciesID, name, krakenfile, genusID, fastqin, outdir):
 
 def read_krakenreport(file, krakenfile, fastqin, outdir):
     df = pd.read_csv(file, sep = '\t', header = None)
-    print(df)
+    #print(df)
     for i in df.iterrows():
         print(i)
         info = i[1]
