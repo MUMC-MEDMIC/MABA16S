@@ -1,0 +1,6 @@
+name: filter_reads
+channels:
+  - bioconda
+dependencies:
+  - filtlong=0.2.1
+
