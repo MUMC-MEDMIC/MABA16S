@@ -71,9 +71,24 @@ rule combinereads:
         "cat {input}/*fastq* > {output}"
 
 
+rule filter_read_length:
+    input:
+        rules.combinereads.output
+    output:
+        OUTDIR + "filtered_reads/{sample}.fastq.gz"
+    conda:
+        "envs/filter_reads.yaml"
+    threads: 1
+    params:
+        min_length = 1200
+    log: 
+        OUTDIR + "log/filter_read_length/{sample}.log"
+    shell: 
+        "filtlong --min_length {params.min_length} {input} | gzip > {output}  2> {log}"
+
 rule kraken2:
     input:
-        reads = rules.combinereads.output,
+        reads = rules.filter_read_length.output,
         db = rules.download_kraken2_db.output
     output:
         report = OUTDIR + "kraken2/{sample}/krakenreport.txt",
