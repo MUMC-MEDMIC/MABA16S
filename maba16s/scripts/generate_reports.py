@@ -13,6 +13,7 @@ def read_blastn(file):
         return df
     df = pd.read_csv(file, sep="\t")
     df.columns = ['percentage', 'length', 'bitscore', 'taxonomy']
+
     df = score_top_hits(df)
     return df
 
@@ -27,16 +28,19 @@ def score_top_hits(df):
     df = df[df.percentage > cutoff]
 
     df.taxonomy = df.taxonomy.apply(get_species)
+    blast_hits = df.taxonomy.value_counts()
     data = {
         "percentage":max(df.percentage),
         "length":max(df.length),
         "bitscore":max(df.bitscore),
-        "blast_hit":df.taxonomy.value_counts()
+        "blast_hits":blast_hits,
+        "blast_hit":blast_hits.index[0]
     }
     return data
 
 def get_species(value):
     species = value.split(";")[-1]
+    species = " ".join((species.split(" ")[:2]))
     return species
 
 def get_read_count(file):

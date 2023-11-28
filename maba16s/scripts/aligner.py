@@ -27,7 +27,6 @@ def align_reads(indir, ref, outdir):
             genusname=genusname)
 
 def main():
-    print(str(sys.argv[0]))
     align_reads(indir = sys.argv[1], ref = sys.argv[2], outdir = sys.argv[3])
 
 if __name__ == "__main__":

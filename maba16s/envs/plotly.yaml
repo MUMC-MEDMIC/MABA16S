@@ -1,9 +1,9 @@
-name: kraken2
+name: plotly
 channels:
   - bioconda
   - anaconda
+  - conda-forge
 dependencies:
-  - kraken2=2.1.2
-  - krakentools=1.2
   - pandas
+  - plotly
   - openpyxl

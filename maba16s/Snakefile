@@ -33,8 +33,9 @@ localrules: all, download_kraken2_db, combinereads
 
 rule all:
     input:
-        expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
-        expand(OUTDIR + "reports/{sample}.xls", sample=SAMPLES)
+        #expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
+        #expand(OUTDIR + "reports/{sample}.xlsx", sample=SAMPLES),
+        expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES)
 
 
 rule download_kraken2_db:
@@ -99,7 +100,7 @@ rule strip_genera:
         OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt"
     params:
         reads_cutoff_genus = 50
-    log: 
+    log:
         OUTDIR + "log/{sample}/stripgenera.txt"
     shell:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output} 2> {log}'''
@@ -160,7 +161,7 @@ rule generate_reports:
         blast = rules.blast_consensus_genera.output,
         readcount = rules.strip_genera.output
     output:
-        OUTDIR + "reports/{sample}.xls"
+        OUTDIR + "reports/{sample}.xlsx"
     threads: 1
     conda:
         "envs/kraken2.yaml" # this env has pandas
@@ -168,3 +169,16 @@ rule generate_reports:
         OUTDIR + "log/{sample}/report.log"
     shell:
         "python scripts/generate_reports.py {input.blast} {output} {input.readcount} 2> {log}"
+
+rule make_sankeys:
+    input:
+        rules.generate_reports.output
+    output:
+        OUTDIR + "sankeys/{sample}_sankey.html"
+    threads: 1 
+    conda:
+        "envs/plotly.yaml"
+    log:
+        OUTDIR + "log/make_sankey/{sample}.log"
+    shell:
+        "python scripts/sankey_report.py {input} {output}"

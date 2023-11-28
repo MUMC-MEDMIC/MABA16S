@@ -1,4 +1,4 @@
-name: kraken2
+name: blast
 channels:
   - bioconda
   - anaconda
