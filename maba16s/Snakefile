@@ -60,7 +60,7 @@ rule genus_read_extract:
         krakenfile = OUTDIR + "kraken2/{sample}/output.txt",
         fastq = OUTDIR + "filtered_reads/{sample}.fastq.gz"
     output:
-        temp(directory(OUTDIR + "kraken2/{sample}/genus"))
+        directory(OUTDIR + "genus_fastq/{sample}/")
     threads:
         1
     conda:
