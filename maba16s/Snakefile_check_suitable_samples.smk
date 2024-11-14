@@ -58,7 +58,6 @@ rule all:
     input:
         OUTDIR + "config/config_good_samples.yaml"
 
-
 # Download the database required for Kraken2
 rule download_kraken2_db:
     output:
@@ -71,28 +70,12 @@ rule download_kraken2_db:
     shell:
         "kraken2-build --db {params} --special silva"
 
-
-rule build_blast_db:
-    input:
-        "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
-    output:
-        directory("db/blastDB")
-    threads: 1
-    conda:
-        "envs/blast.yaml"
-    log:
-        "log/blastbuild_db.log"
-    params:
-        "db/blastDB"
-    shell:
-        "makeblastdb -in {input} -dbtype nucl -out {output}/blastDB 2> {log}"
-
 # Concetante ONT reads from multiple fastq files
 rule combinereads:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
     output:
-        temp(OUTDIR + "reads/{sample}.fastq.gz")
+        OUTDIR + "reads/{sample}.fastq.gz"
     threads: 1
     shell:
         "cat {input}/*fastq* > {output}"
