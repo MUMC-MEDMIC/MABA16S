@@ -51,7 +51,7 @@ onerror:
 
 
 # Define local rules
-localrules: all, download_kraken2_db, combinereads
+localrules: all, download_kraken2_db, combinereads, strip_genera, write_good_samples
 
 # Master rule
 rule all:
