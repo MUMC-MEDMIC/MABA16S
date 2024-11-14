@@ -34,7 +34,7 @@ OUTDIR = config['parameters']['outdir'] + "/"
 
 # workflow start: set up output directories & save the config file
 onstart:
-    print("This is MABA16S")
+    print("This is MABA16S: Preprocessing samples")
     time.sleep(1)
 
     # copy the config file to output dir
@@ -48,7 +48,7 @@ onstart:
 # Error handling
 onerror:
     print(f"Attempted to analyse the following samples: {SAMPLES}")
-    print("An error has occured")
+    print("An error has occured during preprocessing")
 
 
 # Define local rules
