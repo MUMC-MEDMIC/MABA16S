@@ -4,17 +4,15 @@ from shutil import copy2
 import pathlib
 import pandas as pd
 
+# workflow start: set up output directories & save the config files
 configfile: "config/config.yaml"
-
 
 OUTDIR = config['parameters']['outdir'] + "/"
 configfile: OUTDIR + "config/config_good_samples.yaml"
 SAMPLES = config['GOODSAMPLES']
 
-
-
 onstart:
-    print("This is MABA16S")
+    print("This is MABA16S: analysing high quality samples")
     time.sleep(1)
 
     # copy the config file to output dir
@@ -24,32 +22,22 @@ onstart:
         print(i[0], '\t', i[1])
     print(f'output directory is: {OUTDIR}')
 
+# Error handling
 onerror:
     print(f"these were the samples: {SAMPLES}")
     print("error has occured")
 
+# Define local rules
+localrules: all
 
-localrules: all, download_kraken2_db, combinereads
-
+# Master rule
 rule all:
     input:
         #expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
         #expand(OUTDIR + "reports/{sample}.xlsx", sample=SAMPLES),
         expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES)
 
-
-rule download_kraken2_db:
-    output:
-        "db/silva"
-    threads: 1
-    conda:
-        "envs/kraken2.yaml"
-    params:
-        "db/silva"
-    shell:
-        "kraken2-build --db {params} --special silva"
-
-
+# Build the blast database
 rule build_blast_db:
     input:
         "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
@@ -65,66 +53,12 @@ rule build_blast_db:
     shell:
         "makeblastdb -in {input} -dbtype nucl -out {output}/blastDB 2> {log}"
 
-
-rule combinereads:
-    input:
-        lambda wildcards: SAMPLES[wildcards.sample]
-    output:
-        temp(OUTDIR + "reads/{sample}.fastq.gz")
-    threads: 1
-    shell:
-        "cat {input}/*fastq* > {output}"
-
-rule filter_read_length:
-    input:
-        rules.combinereads.output
-    output:
-        OUTDIR + "filtered_reads/{sample}.fastq.gz"
-    conda:
-        "envs/filter_reads.yaml"
-    threads: 1
-    params:
-        min_length = 1200
-    log: 
-        OUTDIR + "log/filter_read_length/{sample}.log"
-    shell: 
-        "filtlong --min_length {params.min_length} {input} | gzip > {output}  2> {log}"
-
-rule kraken2:
-    input:
-        reads = rules.filter_read_length.output,
-        db = rules.download_kraken2_db.output
-    output:
-        report = OUTDIR + "kraken2/{sample}/krakenreport.txt",
-        out = OUTDIR + "kraken2/{sample}/output.txt"
-    threads: 4
-    conda:
-        "envs/kraken2.yaml"
-    log:
-        OUTDIR + "log/{sample}/kraken2_main.txt"
-    shell:
-        "kraken2 --db {input.db} -t {threads} "
-        "--report {output.report} {input.reads} > {output.out} "
-
-
-rule strip_genera:
-    input:
-        rules.kraken2.output.report
-    output:
-        OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt"
-    params:
-        reads_cutoff_genus = 50
-    log:
-        OUTDIR + "log/{sample}/stripgenera.txt"
-    shell:
-        '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output} 2> {log}'''
-
-
+# Split the fastq file based on taxonomic rank assignment
 rule genus_read_extract:
     input:
         report = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt",
-        krakenfile = rules.kraken2.output.out,
-        fastq = rules.filter_read_length.output
+        krakenfile = OUTDIR + "kraken2/{sample}/output.txt",
+        fastq = OUTDIR + "filtered_reads/{sample}.fastq.gz"
     output:
         temp(directory(OUTDIR + "kraken2/{sample}/genus"))
     threads:
@@ -173,7 +107,7 @@ rule blast_consensus_genera:
 rule generate_reports:
     input:
         blast = rules.blast_consensus_genera.output,
-        readcount = rules.strip_genera.output
+        readcount = OUTDIR + "kraken2/{sample}/krakenreport_filtered.txt"
     output:
         OUTDIR + "reports/{sample}.xlsx"
     threads: 1
