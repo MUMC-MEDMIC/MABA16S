@@ -134,6 +134,8 @@ rule qc_preprocessing:
         genera = rules.strip_genera.output
     output:
         OUTDIR + "QC/{sample}/{sample}_qcPreprocessing.txt"
+    log:
+        OUTDIR + "log/{sample}/qcPreprocessing.txt"
     shell:
         """       
         # Get raw reads count (line count divided by 4 for FASTQ format)
@@ -147,7 +149,7 @@ rule qc_preprocessing:
 
         # Write results to the output file
         echo -e "sampleID\trawReads\tfilteredReads\tnGenera" > {output}
-        echo -e "{wildcards.sample}\t${{rawReads}}\t${{filteredReads}}\t${{nGenera}}" >> {output} 
+        echo -e "{wildcards.sample}\t${{rawReads}}\t${{filteredReads}}\t${{nGenera}}" >> {output} 2> {log}
         """       
 
 # Generate a new config file: samples for further analysis only
