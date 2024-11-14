@@ -101,7 +101,7 @@ rule kraken2:
     conda:
         "envs/kraken2.yaml"
     log:
-        OUTDIR + "log/{sample}/kraken2_main.txt.txt"
+        OUTDIR + "log/{sample}/kraken2_main.txt"
     shell:
         "kraken2 --db {input.db} -t {threads} "
         "--report {output.report} {input.reads} > {output.out} "
