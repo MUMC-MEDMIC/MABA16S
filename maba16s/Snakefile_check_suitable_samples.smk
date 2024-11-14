@@ -16,7 +16,8 @@ Main Steps:
 3. Filter reads by minimum length
 4. Perform taxonomic classification with Kraken2
 5. Select and filter Kraken2 output for genera
-6. Write a configuration file with samples for further analysis
+6. Calculate basic QC parameters - read counts and number of genera
+7. Write a configuration file with samples for further analysis
 
 """
 
@@ -51,12 +52,13 @@ onerror:
 
 
 # Define local rules
-localrules: all, download_kraken2_db, combinereads, strip_genera, write_good_samples
+localrules: all, download_kraken2_db, combinereads, strip_genera, qc_preprocessing, write_good_samples
 
 # Master rule
 rule all:
     input:
-        OUTDIR + "config/config_good_samples.yaml"
+        OUTDIR + "config/config_good_samples.yaml",
+        expand(OUTDIR + "QC/{sample}/{sample}_qcPreprocessing.txt", sample=SAMPLES)
 
 # Download the database required for Kraken2
 rule download_kraken2_db:
@@ -123,6 +125,30 @@ rule strip_genera:
         reads_cutoff_genus = 50
     shell:
         '''awk '$4 == "G" {{print $0}}' {input} | awk '$2 > {params.reads_cutoff_genus} {{print $0}}' > {output}'''
+
+# QC pre-processing step
+rule qc_preprocessing:
+    input:
+        raw = rules.combinereads.output,
+        filtered = rules.filter_read_length.output,
+        genera = rules.strip_genera.output
+    output:
+        OUTDIR + "QC/{sample}/{sample}_qcPreprocessing.txt"
+    shell:
+        """       
+        # Get raw reads count (line count divided by 4 for FASTQ format)
+        rawReads=$(( $(zcat {input.raw} | wc -l) / 4 ))
+
+        # Get filtered reads count (line count divided by 4 for FASTQ format)
+        filteredReads=$(( $(zcat {input.filtered} | wc -l) / 4 ))
+
+        # Count the number of genera in the filtered Kraken2 report
+        nGenera=$(wc -l < {input.genera})
+
+        # Write results to the output file
+        echo -e "sampleID\trawReads\tfilteredReads\tnGenera" > {output}
+        echo -e "{wildcards.sample}\t${{rawReads}}\t${{filteredReads}}\t${{nGenera}}" >> {output} 
+        """       
 
 # Generate a new config file: samples for further analysis only
 rule write_good_samples:
