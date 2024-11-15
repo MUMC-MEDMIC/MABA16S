@@ -1,3 +1,29 @@
+"""
+Kraken Extract Script
+=====================
+
+Description:
+------------
+This script processes a Kraken2 taxonomic classification report to extract 
+reads associated with specific genera. It generates FASTA files for each 
+genus by calling the `extract_kraken_reads.py` tool from the kraken-tools package.
+
+Workflow:
+---------
+1. Read the Kraken2 report file.
+2. Extract genus names and IDs.
+3. Create output directories for each genus.
+4. Extract reads for each genus using `extract_kraken_reads.py`.
+
+Arguments:
+----------
+1. Input Kraken2 report file (path).
+2. Input Kraken2 classification file (path).
+3. Input FASTQ file (path).
+4. Output directory (path).
+
+"""
+
 import pandas as pd
 import os
 import sys
