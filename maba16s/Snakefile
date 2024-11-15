@@ -57,12 +57,13 @@ onerror:
     print("An error has occured")
 
 # Define local rules
-localrules: all, generate_reports, make_sankeys
+localrules: all, generate_reports, make_sankeys, post_analysis_QC
 
 # Master rule
 rule all:
     input:
-        expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES)
+        expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES),
+        expand(OUTDIR + "QC/{sample}/{sample}_qcPostAnalysis.txt", sample=SAMPLES)
 
 # Build the blast database
 rule build_blast_db:
@@ -133,6 +134,40 @@ rule blast_consensus_genera:
         OUTDIR + 'log/{sample}/blast_consensus_genera.log'
     shell:
         "python scripts/blast_consensus.py {input.fastas} {threads} {input.db} {output.outdir} 2> {log} "
+
+# Post-analysis QC (checking)
+rule post_analysis_QC:
+    input:
+        qc = OUTDIR + "QC/{sample}/{sample}_qcPreprocessing.txt",
+        genus_reads = rules.genus_read_extract.output,
+        alignment = rules.map_genera.output.aligned_dir, 
+        consensus = rules.map_genera.output.consensus_dir,
+        blast = rules.blast_consensus_genera.output
+    output:
+        OUTDIR + "QC/{sample}/{sample}_qcPostAnalysis.txt"
+    log:
+        OUTDIR + "log/{sample}/qcPostAnalysis.txt"
+    shell:
+        """
+        # Read the original QC file into a temporary variable
+        qcData=$(cat {input.qc})
+
+        # Count the number of files in the genus reads directory
+        nGenusReads=$(ls -1 {input.genus_reads} | wc -l)
+
+        # Count the number of files in the aligned reads directory
+        nAligned=$(ls -1 {input.alignment} | wc -l)
+
+        # Count the number of files in the consensus FASTA directory
+        nConsensusFastas=$(ls -1 {input.consensus} | wc -l)
+
+        # Count the number of files in the BLAST directory
+        nBlast=$(ls -1 {input.blast} | wc -l)
+
+        # Write the extended QC data to the new file
+        echo -e "sampleID\trawReads\tfilteredReads\tnGenera\tnGenusReads\tnAligned\tnConsensusFastas\tnBlast" > {output}
+        echo -e "${{qcData}}\t${{nGenusReads}}\t${{nAligned}}\t${{nConsensusFastas}}\t${{nBlast}}" >> {output} 2> {log}
+        """
 
 # Create a basic report per sample
 rule generate_reports:
