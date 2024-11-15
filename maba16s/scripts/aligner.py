@@ -35,10 +35,11 @@ def catch_right_ref(genusname, ref, outdir):
 def run_minimap2(reads, reference, outdir, genusname):
     print(f'mapping reads {reads} to {reference}')
     os.system(f'mkdir -p {outdir}/aligned_reads')
-    os.system(f'minimap2 -ax map-ont "{reference}" "{reads}" > "{outdir}/aligned_reads/{genusname}_consensus.sam"')
-    os.system(f'samtools view -b -S "{outdir}/aligned_reads/{genusname}_consensus.sam" | samtools sort > "{outdir}/aligned_reads/{genusname}_consensus_sort.bam"')
-    os.system(f'rm {outdir}/aligned_reads/*consensus.sam')
+    os.system(f'minimap2 -t4 -ax map-ont "{reference}" "{reads}" |'
+              f'samtools view -bS - | '
+              f'samtools sort -o "{outdir}/aligned_reads/{genusname}_consensus_sort.bam"')
     os.system(f'mkdir -p {outdir}/consensus_fastas/')
+    print(f'generating consensus for {reads}')
     os.system(f'samtools consensus "{outdir}/aligned_reads/{genusname}_consensus_sort.bam" > "{outdir}/consensus_fastas/{genusname}_consensus.fasta"')
 
 
