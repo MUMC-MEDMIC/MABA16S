@@ -1,3 +1,32 @@
+"""
+MABA16S Analysis Pipeline
+==========================
+
+Description:
+------------
+This Snakemake pipeline performs an in-depth analysis of high-quality samples 
+from 16S metagenomic sequencing. It integrates Kraken2, Minimap2, 
+BLASTn, and custom Python scripts to characterize and visualize the taxonomic 
+composition of samples.
+
+Workflow:
+---------
+1. Extract genus-specific reads from Kraken2 filtered reports.
+2. Map extracted reads to reference sequences and generate consensus FASTA files.
+3. Perform BLASTn analysis on consensus FASTA files against a reference database.
+4. Generate detailed Excel reports summarizing BLASTn and Kraken2 results.
+5. Create Sankey diagrams visualizing the taxonomic composition.
+
+Main Rules:
+-----------
+- `build_blast_db`: Builds a BLAST database from a SILVA reference file.
+- `genus_read_extract`: Extracts genus-specific reads based on Kraken2 results.
+- `map_genera`: Maps genus-specific reads to references and generates consensus sequences.
+- `blast_consensus_genera`: Runs BLASTn on consensus FASTA files.
+- `generate_reports`: Produces Excel reports summarizing results.
+- `make_sankeys`: Creates Sankey diagrams for visualizing results.
+"""
+
 import time
 import os
 from shutil import copy2
@@ -24,8 +53,8 @@ onstart:
 
 # Error handling
 onerror:
-    print(f"these were the samples: {SAMPLES}")
-    print("error has occured")
+    print(f"Attempted to analyse these samples: {SAMPLES}")
+    print("An error has occured")
 
 # Define local rules
 localrules: all, generate_reports, make_sankeys
