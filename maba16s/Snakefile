@@ -72,20 +72,24 @@ rule genus_read_extract:
         python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output}
         '''
 
-
+# Map genus-specific reads to reference and generate consensus FASTA
 rule map_genera:
     input:
         readdir = rules.genus_read_extract.output,
         ref = "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
     output:
-        directory(OUTDIR + 'kraken2consensus/{sample}/')
-    threads: 1
+        ref_dir = directory(OUTDIR + "kraken2consensus/{sample}/reference_fastas/"),
+        aligned_dir=directory(OUTDIR + "kraken2consensus/{sample}/aligned_reads/"),
+        consensus_dir=directory(OUTDIR + "kraken2consensus/{sample}/consensus_fastas/")
+    params:
+        outdir = OUTDIR + "kraken2consensus/{sample}/"
+    threads: 4
     conda:
         "envs/minimapsamtools.yaml"
     log:
         OUTDIR + "log/{sample}/map_genera.log"
     shell:
-        "python scripts/aligner.py {input.readdir} {input.ref} {output} 2> {log}"
+        "python scripts/aligner.py {input.readdir} {input.ref} {params.outdir} 2> {log}"
 
 
 rule blast_consensus_genera:
