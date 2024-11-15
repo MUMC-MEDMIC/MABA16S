@@ -1,3 +1,41 @@
+"""
+BLASTn and Kraken2 Processing Script
+====================================
+
+Description:
+------------
+This script processes BLASTn output files and filtered Kraken2 reports to 
+generate a summary table with key metrics for each taxon, including the number 
+of reads assigned directly to the taxon, the total reads within its clade, and 
+the top BLASTn hit details.
+
+Workflow:
+---------
+1. Parse BLASTn output files to extract top hits based on bitscore and 
+   sequence identity thresholds.
+2. Parse the Kraken2 filtered report to retrieve read counts for each taxon.
+3. Combine BLASTn data and Kraken2 read counts into a final summary table.
+4. Sort taxa by the number of reads assigned directly and export the table as 
+   an Excel file.
+
+Arguments:
+----------
+1. Input directory containing BLASTn output files (`*_BLASTn.txt`).
+2. Path to the Kraken2 filtered report file.
+3. Path to the output Excel file.
+
+Output:
+-------
+An Excel file containing a summary table with the following columns:
+- percentage: Maximum sequence identity percentage from BLASTn hits.
+- length: Maximum alignment length from BLASTn hits.
+- bitscore: Maximum bitscore from BLASTn hits.
+- blast_hit: Top BLASTn hit taxonomy.
+- reads_taxon: Number of reads assigned directly to the taxon.
+- reads_clade: Total reads within the taxon's clade.
+- num_reads: Same as reads_taxon (for compatibility).
+"""
+
 import sys
 import pandas as pd
 import glob
@@ -92,6 +130,8 @@ def main():
     results = results.sort_values('num_reads', ascending = False)
     results.to_excel(outxls)
 
+    print(f'Report generated')
+    print(results)
 
 if __name__ == "__main__":
     main()
