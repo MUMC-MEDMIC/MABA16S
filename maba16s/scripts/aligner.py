@@ -28,16 +28,18 @@ import glob
 import os
 
 def catch_right_ref(genusname, ref, outdir):
+    os.system(f'mkdir -p {outdir}/reference_fastas')
     ID = os.popen(f'grep "{genusname}" {ref} | head -n 1 | cut -b 2-').read().split()[0]
-    os.system(f'samtools faidx {ref} {ID} >  "{outdir}/{genusname}_reference.fasta"')
+    os.system(f'samtools faidx {ref} {ID} >  "{outdir}/reference_fastas/{genusname}_reference.fasta"')
 
 def run_minimap2(reads, reference, outdir, genusname):
     print(f'mapping reads {reads} to {reference}')
-    os.system(f'minimap2 -ax map-ont "{reference}" "{reads}" > "{outdir}/{genusname}_consensus.sam"')
-    os.system(f'samtools view -b -S "{outdir}/{genusname}_consensus.sam" | samtools sort > "{outdir}/{genusname}_consensus_sort.bam"')
-    os.system(f'rm {outdir}/*consensus.sam')
-    os.system(f'mkdir -p {outdir}/fastas/')
-    os.system(f'samtools consensus "{outdir}/{genusname}_consensus_sort.bam" > "{outdir}/fastas/{genusname}_consensus.fasta"')
+    os.system(f'mkdir -p {outdir}/aligned_reads')
+    os.system(f'minimap2 -ax map-ont "{reference}" "{reads}" > "{outdir}/aligned_reads/{genusname}_consensus.sam"')
+    os.system(f'samtools view -b -S "{outdir}/aligned_reads/{genusname}_consensus.sam" | samtools sort > "{outdir}/aligned_reads/{genusname}_consensus_sort.bam"')
+    os.system(f'rm {outdir}/aligned_reads/*consensus.sam')
+    os.system(f'mkdir -p {outdir}/consensus_fastas/')
+    os.system(f'samtools consensus "{outdir}/aligned_reads/{genusname}_consensus_sort.bam" > "{outdir}/consensus_fastas/{genusname}_consensus.fasta"')
 
 
 def align_reads(indir, ref, outdir):
@@ -47,7 +49,7 @@ def align_reads(indir, ref, outdir):
         catch_right_ref(genusname, ref, outdir)
         run_minimap2(
             reads=file,
-            reference=f"{outdir}/{genusname}_reference.fasta",
+            reference=f"{outdir}/reference_fastas/{genusname}_reference.fasta",
             outdir=outdir,
             genusname=genusname)
 
