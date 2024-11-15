@@ -28,13 +28,11 @@ onerror:
     print("error has occured")
 
 # Define local rules
-localrules: all
+localrules: all, generate_reports, make_sankeys
 
 # Master rule
 rule all:
     input:
-        #expand(OUTDIR + 'BLAST/{sample}', sample=SAMPLES),
-        #expand(OUTDIR + "reports/{sample}.xlsx", sample=SAMPLES),
         expand(OUTDIR + "sankeys/{sample}_sankey.html", sample=SAMPLES)
 
 # Build the blast database
@@ -122,6 +120,7 @@ rule generate_reports:
     shell:
         "python scripts/generate_reports.py {input.blast} {output} {input.readcount} 2> {log}"
 
+# create sankey plots per sample
 rule make_sankeys:
     input:
         rules.generate_reports.output
