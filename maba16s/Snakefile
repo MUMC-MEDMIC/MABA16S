@@ -107,7 +107,7 @@ rule blast_consensus_genera:
     shell:
         "python scripts/blast_consensus.py {input.fastas} {threads} {input.db} {output.outdir} 2> {log} "
 
-
+# Create a basic report per sample
 rule generate_reports:
     input:
         blast = rules.blast_consensus_genera.output,
