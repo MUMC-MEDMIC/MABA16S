@@ -3,19 +3,19 @@ import os
 import glob
 
 def main():
-    inputfasta = sys.argv[1]
+    indir = sys.argv[1]
     threads = sys.argv[2]
     db = sys.argv[3]
-    output = sys.argv[4]
+    outdir = sys.argv[4]
 
-    files = glob.glob(inputfasta + "*fasta")
+    print(f'Blasting files from {indir}')
+
+    files = glob.glob(os.path.join(indir, "*.fasta"))
     for fasta in files:
-        genusname = os.path.basename(fasta).split(".")[0]
-        os.system(f'mkdir -p {output}')
-        command = f'blastn -db {db}/blastDB -query {fasta} -num_threads {threads} -out {output}/{genusname}.txt -outfmt "6 pident length bitscore stitle"'
-        #print(command, file=sys.stderr)
-        os.system(command)
-
+        os.system(f'mkdir -p {outdir}')
+        genusname = os.path.basename(fasta).replace("_consensus.fasta", "")
+        print(f'Blasting {genusname} fasta')
+        os.system(f'blastn -db {db}/blastDB -query "{fasta}" -num_threads {threads} -out "{outdir}/{genusname}_BLASTn.txt" -outfmt "6 pident length bitscore stitle"')
 
 if __name__ == "__main__":
     main()
