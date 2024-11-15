@@ -1,3 +1,34 @@
+"""
+BLASTn Query and Output Script
+==============================
+
+Description:
+------------
+This script performs BLASTn searches for genus-specific FASTA files against a 
+pre-built BLAST database and outputs the results in a tabular format.
+
+Workflow:
+---------
+1. Reads input FASTA files from a specified directory.
+2. Executes BLASTn for each FASTA file using the specified database and number 
+   of threads.
+3. Writes the BLASTn output in tabular format (`pident`, `length`, `bitscore`, 
+   `stitle`) to the specified output directory.
+
+Arguments:
+----------
+1. Input directory containing genus-specific FASTA files.
+2. Number of threads to use for BLASTn.
+3. Path to the BLAST database directory.
+4. Output directory for BLASTn results.
+
+Output:
+-------
+BLASTn result files for each input FASTA file in the specified output directory.
+Each result file is named `<genusname>.txt` and contains the BLASTn output in 
+tabular format.
+"""
+
 import sys
 import os
 import glob
