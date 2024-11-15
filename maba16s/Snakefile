@@ -91,13 +91,13 @@ rule map_genera:
     shell:
         "python scripts/aligner.py {input.readdir} {input.ref} {params.outdir} 2> {log}"
 
-
+# Run BLASTn on consensus FASTA files
 rule blast_consensus_genera:
     input:
         db = rules.build_blast_db.output,
-        fastas = rules.map_genera.output
+        fastas = rules.map_genera.output.consensus_dir
     output:
-        directory(OUTDIR + 'BLAST/{sample}')
+        outdir = directory(OUTDIR + 'BLAST/{sample}')
     threads:
         4
     conda:
@@ -105,7 +105,7 @@ rule blast_consensus_genera:
     log:
         OUTDIR + 'log/{sample}/blast_consensus_genera.log'
     shell:
-        "python scripts/blast_consensus.py {input.fastas}/fastas/ {threads} {input.db} {output} 2> {log} "
+        "python scripts/blast_consensus.py {input.fastas} {threads} {input.db} {output.outdir} 2> {log} "
 
 
 rule generate_reports:
