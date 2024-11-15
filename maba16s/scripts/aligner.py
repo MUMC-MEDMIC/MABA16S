@@ -27,9 +27,9 @@ import sys
 import glob
 import os
 
-def catch_right_ref(genusname, ref, dumpdir):
+def catch_right_ref(genusname, ref, outdir):
     ID = os.popen(f'grep "{genusname}" {ref} | head -n 1 | cut -b 2-').read().split()[0]
-    os.system(f'samtools faidx {ref} {ID} >  "{dumpdir}/{genusname}_reference.fasta"')
+    os.system(f'samtools faidx {ref} {ID} >  "{outdir}/{genusname}_reference.fasta"')
 
 def run_minimap2(reads, reference, outdir, genusname):
     print(f'mapping reads {reads} to {reference}')
