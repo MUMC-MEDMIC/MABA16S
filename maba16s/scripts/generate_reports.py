@@ -56,7 +56,7 @@ def read_blastn(blastfile):
             "taxonomy": "No hits or no good consensus"}])
 
     # When BLASTn has hits        
-    print(f'Processing BLASTn hits from {file}')
+    print(f'Processing BLASTn hits from {blastfile}')
     blast_df = pd.read_csv(blastfile, sep="\t")
     blast_df.columns = ['percentage', 'length', 'bitscore', 'taxonomy']
     blast_df = score_top_hits(blast_df)
@@ -115,7 +115,6 @@ def main():
     for blastfile in glob.glob(os.path.join(blastindir, "*_BLASTn.txt")):
         blast_data = read_blastn(blastfile)
         genus = os.path.basename(blastfile).replace("_BLASTn.txt", "")
-        print(f'Processing genus {genus}')
         results[genus] = blast_data
 
     results = pd.DataFrame(results).T
@@ -124,7 +123,6 @@ def main():
     print(f'Collecting read counts from {readfile}')
     readcount = get_read_count(readfile)
     results['num_reads'] = [readcount[x]['reads_taxon'] for x in results.index]
-    results['reads_clade'] = [readcount[x]['reads_clade'] for x in results.index]
 
     # Sort and save the resulting table
     results = results.sort_values('num_reads', ascending = False)
