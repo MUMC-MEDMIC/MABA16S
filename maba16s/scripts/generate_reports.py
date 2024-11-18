@@ -40,6 +40,7 @@ import sys
 import pandas as pd
 import glob
 import os
+import numpy as np
 
 # functionality to process the BLASTn output
 percentage_from_max_bitscore = 0.99
@@ -49,11 +50,13 @@ def read_blastn(blastfile):
     # Handle missing BLASTn information: no match due to empty consensus or NNNNNNN as consensus
     if os.path.getsize(blastfile) == 0:
         print(f'No BLASTn hits found, returning NAs')
-        return pd.DataFrame([{
+        return {
             "percentage": np.nan,
             "length": np.nan,
             "bitscore": np.nan,
-            "taxonomy": "No hits or no good consensus"}])
+	    "blast_hits": None,
+            "blast_hit": "No hits or no good consensus"
+	}
 
     # When BLASTn has hits        
     print(f'Processing BLASTn hits from {blastfile}')
@@ -79,7 +82,7 @@ def score_top_hits(blast_df):
         "percentage":max(blast_df.percentage),
         "length":max(blast_df.length),
         "bitscore":max(blast_df.bitscore),
-        "blast_hits":blast_hits,
+        "blast_hits":blast_hits.to_dict(),
         "blast_hit":blast_hits.index[0]
     }
     return data
