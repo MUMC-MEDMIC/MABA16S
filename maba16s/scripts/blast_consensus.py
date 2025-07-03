@@ -44,9 +44,11 @@ def main():
     os.system(f'mkdir -p {outdir}')
     files = glob.glob(os.path.join(indir, "*.fasta"))
     for fasta in files:
-        genusname = os.path.basename(fasta).replace("_consensus.fasta", "")
+        basename = os.path.basename(fasta).replace("_consensus.fasta", "")
+        genusID, genusname = basename.split("_", 1)
+
         print(f'Blasting {genusname} fasta')
-        os.system(f'blastn -db {db}/blastDB -query "{fasta}" -num_threads {threads} -out "{outdir}/{genusname}_BLASTn.txt" -outfmt "6 pident length bitscore stitle"')
+        os.system(f'blastn -db {db}/blastDB -query "{fasta}" -num_threads {threads} -out "{outdir}/{genusID}_{genusname}_BLASTn.txt" -outfmt "6 pident length bitscore stitle"')
 
 if __name__ == "__main__":
     main()
