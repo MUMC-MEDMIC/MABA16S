@@ -91,20 +91,23 @@ rule genus_read_extract:
         directory(OUTDIR + "genus_reads/{sample}/")
     threads:
         1
+    resources:
+        mem_mb = 4000
     conda:
         "envs/kraken2.yaml"
     log:
         OUTDIR + "log/{sample}/genusreadextract.log"
     shell:
         '''
-        python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output}
+        python scripts/krakenextract.py {input.report} {input.krakenfile} {input.fastq} {output} 2> {log}
         '''
 
 # Map genus-specific reads to reference and generate consensus FASTA
 rule map_genera:
     input:
         readdir = rules.genus_read_extract.output,
-        ref = "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta"
+        ref = "db/silva/data/SILVA_138.1_SSURef_NR99_tax_silva.fasta",
+        dbIDs = "db/silva/seqid2taxid.map"
     output:
         ref_dir = directory(OUTDIR + "kraken2consensus/{sample}/reference_fastas/"),
         aligned_dir=directory(OUTDIR + "kraken2consensus/{sample}/aligned_reads/"),
@@ -112,12 +115,14 @@ rule map_genera:
     params:
         outdir = OUTDIR + "kraken2consensus/{sample}/"
     threads: 4
+    resources:
+        mem_mb = 4000
     conda:
         "envs/minimapsamtools.yaml"
     log:
         OUTDIR + "log/{sample}/map_genera.log"
     shell:
-        "python scripts/aligner.py {input.readdir} {input.ref} {params.outdir} 2> {log}"
+        "python scripts/aligner.py {input.readdir} {input.ref} {params.outdir} {input.dbIDs} 2> {log}"
 
 # Run BLASTn on consensus FASTA files
 rule blast_consensus_genera:
