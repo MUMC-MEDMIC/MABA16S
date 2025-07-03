@@ -27,35 +27,52 @@ import sys
 import glob
 import os
 
-def catch_right_ref(genusname, ref, outdir):
+def catch_right_ref(genusID, genusname, dbIDs, ref, outdir):
     os.system(f'mkdir -p {outdir}/reference_fastas')
-    ID = os.popen(f'grep "{genusname}" {ref} | head -n 1 | cut -b 2-').read().split()[0]
-    os.system(f'samtools faidx {ref} {ID} >  "{outdir}/reference_fastas/{genusname}_reference.fasta"')
-
-def run_minimap2(reads, reference, outdir, genusname):
+    ID = os.popen(f'grep -P "\\t{genusID}$" {dbIDs} | head -n 1 | cut -f1').read().strip()
+    outfile = f"{outdir}/reference_fastas/{genusID}_{genusname}_reference.fasta"
+    os.system(f'samtools faidx {ref} {ID} > "{outfile}"')
+    
+def run_minimap2(reads, reference, outdir, genusID, genusname):
     print(f'mapping reads {reads} to {reference}')
     os.system(f'mkdir -p {outdir}/aligned_reads')
+    
     os.system(f'minimap2 -t4 -ax map-ont "{reference}" "{reads}" |'
               f'samtools view -bS - | '
-              f'samtools sort -o "{outdir}/aligned_reads/{genusname}_consensus_sort.bam"')
+              f'samtools sort -o "{outdir}/aligned_reads/{genusID}_{genusname}_consensus_sort.bam"')
+    
     os.system(f'mkdir -p {outdir}/consensus_fastas/')
     print(f'generating consensus for {reads}')
-    os.system(f'samtools consensus "{outdir}/aligned_reads/{genusname}_consensus_sort.bam" > "{outdir}/consensus_fastas/{genusname}_consensus.fasta"')
+    os.system(f'samtools consensus "{outdir}/aligned_reads/{genusID}_{genusname}_consensus_sort.bam" > "{outdir}/consensus_fastas/{genusID}_{genusname}_consensus.fasta"')
 
 
-def align_reads(indir, ref, outdir):
+def align_reads(indir, ref, outdir, dbIDs):
     os.system(f'mkdir -p {outdir}')
-    for file in glob.glob(indir + "/*.fasta"):
-        genusname = os.path.basename(file).split(".")[0]
-        catch_right_ref(genusname, ref, outdir)
+
+    # check for the existence of fasta files in the input directory
+    fasta_files = glob.glob(os.path.join(indir, "*.fasta"))
+    if not fasta_files:
+        print(f"Error: no FASTA files found in {indir}", file=sys.stderr)
+        sys.exit(1)
+
+    for file in fasta_files:
+
+        # retrieve the right file name parts
+        filename = os.path.basename(file).rsplit(".", 1)[0]  # Remove .fasta
+        genusID, genusname = filename.split("_", 1)
+
+        # retrieve a fitting reference
+        catch_right_ref(genusID, genusname, dbIDs, ref, outdir)
+
         run_minimap2(
             reads=file,
-            reference=f"{outdir}/reference_fastas/{genusname}_reference.fasta",
+            reference=f"{outdir}/reference_fastas/{genusID}_{genusname}_reference.fasta",
             outdir=outdir,
+            genusID=genusID,
             genusname=genusname)
 
 def main():
-    align_reads(indir = sys.argv[1], ref = sys.argv[2], outdir = sys.argv[3])
+    align_reads(indir = sys.argv[1], ref = sys.argv[2], outdir = sys.argv[3], dbIDs = sys.argv[4])
 
 if __name__ == "__main__":
     main()
