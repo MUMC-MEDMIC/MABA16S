@@ -133,6 +133,8 @@ rule blast_consensus_genera:
         outdir = directory(OUTDIR + 'BLAST/{sample}')
     threads:
         4
+    resources:
+        mem_mb = 8000
     conda:
         "envs/blast.yaml"
     log:
