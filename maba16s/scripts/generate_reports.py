@@ -99,7 +99,7 @@ def get_read_count(readfile):
     kraken_data = pd.read_csv(readfile, sep="\t", header = None)
     kraken_data.columns = ["percentage", "reads_clade","reads_taxon", "taxon_level", "taxon_id", "name"]
     kraken_data["name"] = kraken_data.name.apply(lambda x: x.strip())
-    kraken_data = kraken_data.set_index("name")
+    kraken_data = kraken_data.set_index("taxon_id")
     kraken_read_dict = kraken_data[["reads_taxon", "reads_clade"]].to_dict(orient="index")
 
     return kraken_read_dict
@@ -117,19 +117,21 @@ def main():
     
     for blastfile in glob.glob(os.path.join(blastindir, "*_BLASTn.txt")):
         blast_data = read_blastn(blastfile)
-        genus = os.path.basename(blastfile).replace("_BLASTn.txt", "")
-        results[genus] = blast_data
+        basename = os.path.basename(blastfile).replace("_BLASTn.txt", "")
+        genusID, genus = basename.split("_", 1)
+        blast_data['genus'] = genus
+        results[genusID] = blast_data
 
-    results = pd.DataFrame(results).T
+    results_df = pd.DataFrame(results).T
 
     # Retrieve the read counts from the filtered Kraken2 report
     print(f'Collecting read counts from {readfile}')
     readcount = get_read_count(readfile)
-    results['num_reads'] = [readcount[x]['reads_taxon'] for x in results.index]
+    results_df['num_reads'] = [readcount[x]['reads_taxon'] for x in results_df.index]
 
     # Sort and save the resulting table
-    results = results.sort_values('num_reads', ascending = False)
-    results.to_excel(outxls)
+    results_df = results_df.sort_values('num_reads', ascending = False)
+    results_df.to_excel(outxls)
 
     print(f'Report generated')
     print(results)
