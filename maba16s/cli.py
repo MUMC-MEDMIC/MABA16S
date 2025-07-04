@@ -4,7 +4,7 @@ import sys
 from argparse import ArgumentParser
 import yaml
 import os
-from scripts.renamer import renamer
+import subprocess
 
 locationrepo = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,58 +44,64 @@ def main(command_line=None):
     subparsers = parser.add_subparsers(dest="mode")
 
     # add module rename barcodes to samples
-    rename = subparsers.add_parser(
-            "rename",
-            help="""rename barcode.fasta to
-            samplenames supplied in a spreadsheet""")
+    rename = subparsers.add_parser("rename",
+                                   help='rename barcode.fasta to samplenames supplied in a spreadsheet')
 
-    rename.add_argument("-i",
-                        required=True,
+    rename.add_argument("-i", 
+                        required=True, 
                         dest='input_directory',
-
-                        )
-    rename.add_argument("--spreadsheet",
+                        help='supply a raw data directory')
+    
+    rename.add_argument("--samplesheet",
                         required=True,
-                        dest='spreadsheet',
-                        help='supply a spreadsheet to rename samples'
-                        )
+                        dest='samplesheet',
+                        help='supply an excel sample sheet to rename samples')
+    
+    rename.add_argument("--technician",
+                        required=False,
+                        help='First email address contact to notify on failure (optional)')
+    
+    rename.add_argument("--mmb",
+                        required=False,
+                        help='Second email address contact to notify on failure (optional)')
 
     # add snakemake pipeline to completely run fasta to 16S report
     snakemake = subparsers.add_parser("snakemake",
-                                      help='''run the entire workflow on 16S
-                                      sequenced samples''')
-    snakemake.add_argument(
-                "-i",
-                required=True,
-                dest="input_files",
-                nargs="+"
-                )
-    snakemake.add_argument(
-                            "--cores",
-                            dest='cores',
-                            required=True,
-                            type=int,
-                            help='Number of CPU cores to use'
-                            )
+                                      help='run the entire workflow on 16S sequenced samples')
+    snakemake.add_argument("-i",
+                           required=True,
+                           dest="input_files",
+                           nargs="+")
+    
+    snakemake.add_argument("--cores",
+                           dest='cores',
+                           required=True,
+                           type=int,
+                           help='Number of CPU cores to use')
 
     snakemake.add_argument("-o", required=True, dest="outdir")
 
-    snakemake.add_argument(
-                            "--snakemake-params",
-                            required=False,
-                            dest="smkparams",
-                            )
+    snakemake.add_argument("--snakemake-params",
+                           required=False,
+                           dest="smkparams")
 
 ####################
 # parsing part
 ####################
 
     args = parser.parse_args(command_line)
+    
     if args.mode == "rename":
-        renamer(
-                input_file=args.input_directory,
-                spreadsheet=args.spreadsheet
-                )
+        cmd = ["python3", "scripts/renamer.py",
+               "--input-dir", args.input_directory,
+               "--samplesheet", args.samplesheet]
+        
+        if args.technician:
+            cmd += ["--technician", args.technician]
+        if args.mmb:
+            cmd += ["--mmb", args.mmb]
+        
+        subprocess.run(cmd, check=True)
 
     elif args.mode == "snakemake":
         snakemake_in(
