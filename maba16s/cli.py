@@ -17,7 +17,7 @@ def file_name_generator(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 
-def snakemake_in(samples,  outdir, ):
+def snakemake_in(samples, outdir):
     samplesdic = {}
     samplesdic['parameters'] = {}
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
