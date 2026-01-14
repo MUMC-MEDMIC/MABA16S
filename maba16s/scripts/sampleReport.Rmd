@@ -1,0 +1,270 @@
+---
+params:
+  directory: ''
+  sampleName: ''
+output:
+  word_document: 
+    reference_docx: "../docs/MABA16S_template.docx" 
+---
+
+```{r packages, include=FALSE}
+
+library(tidyverse)
+library(flextable)
+library(ggplot2)
+library(openxlsx)
+library(stringr)
+#library(data.table)
+
+```
+
+```{r flextable, include = FALSE}
+
+set_flextable_defaults(
+  font.family = "calibri",
+  font.size = 10,
+  font.color = "black",
+  border.color = "grey20",
+  border.width = 0.5,
+  padding.top = 3,
+  padding.bottom = 3,
+  padding.left = 5,
+  padding.right = 5,
+  line_spacing = 1,
+  background.color = "transparent",
+  table.layout = "autofit",
+  digits = 2,
+  na_str = "-"
+)
+
+```
+
+```{r Functions, include = FALSE}
+
+# function to look for alternative blast hits if the first hit is uncultured bacterium
+second_or_first_key <- function(x) {
+  # Extract keys that look like: 'some text':
+  keys <- str_match_all(x, "'([^']+)'\\s*:")[[1]][, 2]
+
+  if (length(keys) >= 2) {keys[2]
+    } else if (length(keys) == 1) {keys[1]
+  } else {
+    NA_character_}}
+
+```
+
+```{r setPATHS, include = FALSE}
+
+# set data directory
+dir = params$directory
+
+# set sample name
+sample = params$sampleName
+
+```
+
+```{r sampleSheet, include = FALSE}
+
+# retrieve original sample barcode from the name conversion sample sheet
+samplesheet = data.table::fread(paste0(dir, "/MABA16S_sampleSheet.tsv"))
+  
+# Retrieve all NTCs from the sample sheet
+ntcs = samplesheet %>% filter(grepl("NTC", SampleName, ignore.case = T))
+
+# set the order in which the samples should be displayed
+order = c(sample, ntcs$SampleName)
+
+```
+
+```{r preprocessingQC, include = FALSE}
+
+# retrieve the generated QC output from the pre-analysis pipeline
+firstQC = do.call(rbind, 
+                    lapply(c(sample, ntcs$SampleName), 
+                            function(s) data.table::fread(paste0(dir, "/QC/", s, "/", s, "_qcPreprocessing.txt"))))
+
+# This also contains the information on how many kraken entries generated at least
+# 50 reads and were therefore analysed further
+
+# Add an explainer column for later inclusion in the report
+firstQC = firstQC %>% mutate(Note = ifelse(nGenera == 0,
+                                           "No genera analysed", "-"))
+
+# Determine if the sample had enough kraken hits to be fully analysed
+analysed = firstQC[sampleID == sample, nGenera] > 0
+
+# Determine which samples were analysed (at least 1 qualifying genus)
+inclusion = firstQC %>% filter(nGenera > 0)
+
+# check if any NTCs have failed
+ntcExcl = ntcs %>% filter(!SampleName %in% inclusion$sampleID)
+
+```
+
+```{r postprocessingQC, include = FALSE}
+
+# This is needed to check that all genera were analysed
+
+# retrieve the QC output from the analysis pipeline
+finalQC = do.call(rbind, 
+                    lapply(c(inclusion$sampleID), 
+                            function(s) data.table::fread(paste0(dir, "/QC/", s, "/", s, "_qcPostAnalysis.txt"))))
+
+##### need to remove extra header line from the postAnalysisQC
+
+# retain only entries where not all genera were successfully analysed
+finalQC = finalQC %>%
+  mutate(
+    allAnalysed =
+      nGenera == nGenusReads &
+      nGenera == nAligned &
+      nGenera == nConsensusFastas &
+      nGenera == nBlast
+  ) %>%
+  filter(allAnalysed == FALSE)
+
+# Make a variable for whether all genera were correctly analysed
+generaCheck = nrow(finalQC) < 1
+
+```
+
+```{r continue, include = F}
+
+# Check if the conditions to continue to include the analyses results were met
+continue = analysed == TRUE & generaCheck == TRUE
+
+```
+
+```{r fetchHits, eval = continue, include = FALSE}
+
+# This chunk only runs if the sample was fully analysed
+# Only NTCs with at least 1 analysed genus are included
+
+# read and combine the data from the individual reports 
+allData = do.call(rbind,
+                  lapply(inclusion$sampleID,
+                         function(s) read.xlsx(paste0(dir, "/reports/", s, ".xlsx"),
+                                               na.strings = "") %>%
+                           mutate(SampleName = s)))
+
+# process the hits
+allData = allData %>%
+  mutate(
+    # Differentiate between spike-ins & results
+    spikeIn = factor(ifelse(grepl("imtechella|truepera|allobacillus", blast_hit, ignore.case = TRUE), 
+                            "Spike-in", "Other"),
+                     levels = c("Spike-in", "Other")),
+    
+    # Add renaming logic
+    FinalName = case_when(
+      # ensure that the spike-in reads are appropriately grouped
+      grepl("imtechella", blast_hit, ignore.case = TRUE) ~ "Imtechella",
+      grepl("trueper", blast_hit, ignore.case = TRUE) ~ "Truepera",
+      grepl("allobacillus", blast_hit, ignore.case = TRUE) ~ "Allobacillus",
+      
+      # try to rename uncultured bacteria if alternative options available
+      blast_hit == "uncultured bacterium" ~ second_or_first_key(blast_hits),
+      TRUE ~ blast_hit
+      ),
+    
+    # Neaten up blast_hits string for inclusion in the report
+    blast_hits = blast_hits %>%
+      str_remove("^\\{") %>%
+      str_remove("\\}$")
+  ) %>%
+  # calculate a cumulative count
+  group_by(SampleName, FinalName) %>%
+  mutate(speciesReads = sum(num_reads)) %>%
+      ungroup() %>%
+  as.data.frame()
+
+```
+
+# MUMC+ MMI: 16S ONT
+
+## Single sample report
+
+__Date:__ `r format(Sys.Date(), '%d-%m-%Y')`
+
+__Sample ID:__ `r sample`
+
+__ONT sequencing barcode:__ `r samplesheet$Barcode[samplesheet$SampleName == sample]`
+
+__Negative controls:__ `r ntcs$SampleName` from barcodes `r ntcs$Barcode` respectively.
+
+### Version information:
+
+__Maastricht bacterial 16S ONT pipeline version:__ 1.2.0
+
+### Clinical question:
+
+###### <<space for text, please replace>>
+
+### Method:
+
+The sample underwent DNA extraction, 16S amplification and sequencing on the Oxford Nanopore GridIon.  
+
+A 10.4.1 flow cell and chemistry was used.
+
+### Results overview
+
+`r if (!analysed) "###### This sample generated no kraken2 genus hits with a minimum of 50 reads and was therefore not analysed further"`
+
+`r if (nrow(ntcExcl) > 0)
+  paste0(
+    "###### NTC ",
+    ntcExcl$SampleName,
+    " is not shown because it generated no kraken2 genus hits with a minimum of 50 reads and was therefore not analysed further"
+  )`
+
+`r if (!generaCheck) "###### At least one genus failed to analyse correctly. Please ask the bioinformatician to check the analysis"`
+
+```{r resultsVisualisation, eval = continue, echo = F}
+
+plot = allData %>% 
+  ggplot(aes(x = reorder(blast_hit, -speciesReads), y = num_reads, fill = spikeIn)) +
+      geom_col(position = "stack", colour = "black") +
+      geom_vline(xintercept = -Inf) +
+      geom_hline(yintercept = -Inf) +
+      facet_grid(SampleName ~ spikeIn, scales = "free_x", space = "free_x") +
+      theme_classic() +
+      scale_fill_manual(values = c("Spike-in" = "grey70", "Other" = "chartreuse3"), 
+                        guide = "none") +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
+      scale_x_discrete(expand = c(0,0)) +
+      ylab("number of reads") +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
+            axis.text.y = element_text(size = 8),
+            axis.title.y = element_text(size = 9),
+            axis.line = element_line(),
+            strip.text = element_text(size = 9, face = "bold"),
+            strip.background = element_rect(colour = "grey70", fill = "grey90"))
+    
+    # save the plot
+    ggsave(plot, filename = paste0(dir, "/barCharts/", sample, "_CompositionBarChart.png"),
+           width = (length(unique(allData$blast_hit)) * 0.4) + 1.5, height = 2.2 + (length(unique(allData$SampleName))* 2.2), dpi = 300)
+    
+    # add the plot to the report
+    plot
+
+```
+
+### Detailed summary & QC information
+
+```{r qcTable, echo = F, include = F}
+
+# Format and print the QC table
+flextable(firstQC) #%>% 
+            #select(-nGenera) %>%
+            #rename("Sample Name" = sampleID,
+                   #"Raw reads" = rawReads,
+                   #"Filtered reads" = filteredReads))#%>%
+  #format the header & body
+  #bold(part = "header") %>%
+  #fontsize(part = "header", size = 12) %>%
+  #align(align = "center", part = "all", j = c(1:4)) %>%
+  #add conditional formatting
+  #bg(i = ~ Note == "No genera analysed", j = c("Sample Name", "Note"), bg = "firebrick1") 
+
+```
