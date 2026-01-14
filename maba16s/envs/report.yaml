@@ -1,0 +1,14 @@
+name: MABA16S_report
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.3.1
+  - r-tidyverse=2.0.0
+  - r-flextable=0.9.4
+  - r-jsonlite=1.8.7
+  - r-data.table=1.14.8
+  - r-markdown=1.11
+  - r-openxlsx
+
+# tidyverse installation includes dplyr, ggplot, lubridate, stringt, tibble, tidyr
