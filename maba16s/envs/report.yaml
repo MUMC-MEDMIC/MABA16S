@@ -10,5 +10,7 @@ dependencies:
   - r-data.table=1.14.8
   - r-markdown=1.11
   - r-openxlsx
+  - r-officedown=0.4.1
 
 # tidyverse installation includes dplyr, ggplot, lubridate, stringt, tibble, tidyr
+# the officedown installation is required to ensure that flextables are knitted correctly into word document outputs
