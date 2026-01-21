@@ -3,8 +3,8 @@ params:
   directory: ''
   sampleName: ''
 output:
-  word_document: 
-    reference_docx: "../docs/MABA16S_template.docx" 
+  officedown::rdocx_document:
+    reference_docx: ../docs/MABA16S_template.docx
 ---
 
 ```{r packages, include=FALSE}
@@ -188,23 +188,26 @@ __Date:__ `r format(Sys.Date(), '%d-%m-%Y')`
 
 __Sample ID:__ `r sample`
 
-__ONT sequencing barcode:__ `r samplesheet$Barcode[samplesheet$SampleName == sample]`
-
-__Negative controls:__ `r ntcs$SampleName` from barcodes `r ntcs$Barcode` respectively.
-
 ### Version information:
 
 __Maastricht bacterial 16S ONT pipeline version:__ 1.2.0
-
-### Clinical question:
-
-###### <<space for text, please replace>>
 
 ### Method:
 
 The sample underwent DNA extraction, 16S amplification and sequencing on the Oxford Nanopore GridIon.  
 
-A 10.4.1 flow cell and chemistry was used.
+A 10.4.1 flow cell and chemistry was used.  
+
+__Flow cell type:__ placeholder & __flow cell ID:__ placeholder  
+
+__Kit type:__ placeholder & __Kit lot number:__ placeholder  
+
+__ONT sequencing barcode - sample:__ `r samplesheet$Barcode[samplesheet$SampleName == sample]`  
+
+__Negative controls:__ `r ntcs$SampleName` from barcodes `r ntcs$Barcode` respectively.  
+
+### Conclusion:
+###### <<space for text, please replace>>
 
 ### Results overview
 
@@ -252,19 +255,22 @@ plot = allData %>%
 
 ### Detailed summary & QC information
 
-```{r qcTable, echo = F, include = F}
+```{r qcTable, echo = F}
 
 # Format and print the QC table
-flextable(firstQC) #%>% 
-            #select(-nGenera) %>%
-            #rename("Sample Name" = sampleID,
-                   #"Raw reads" = rawReads,
-                   #"Filtered reads" = filteredReads))#%>%
+firstQC %>% 
+  select(-nGenera) %>%
+  rename("Sample Name" = sampleID,
+        "Raw reads" = rawReads,
+        "Filtered reads" = filteredReads) %>%
+  flextable() %>%
   #format the header & body
-  #bold(part = "header") %>%
-  #fontsize(part = "header", size = 12) %>%
-  #align(align = "center", part = "all", j = c(1:4)) %>%
+  bold(part = "header") %>%
+  fontsize(part = "header", size = 11) %>%
+  align(align = "center", part = "all", j = c(1:4)) %>%
   #add conditional formatting
-  #bg(i = ~ Note == "No genera analysed", j = c("Sample Name", "Note"), bg = "firebrick1") 
+  bg(i = ~ Note == "No genera analysed", j = c("Sample Name", "Note"), bg = "firebrick1") 
 
 ```
+
+## End of report
