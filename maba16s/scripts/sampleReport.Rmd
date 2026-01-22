@@ -14,6 +14,7 @@ library(flextable)
 library(ggplot2)
 library(openxlsx)
 library(stringr)
+library(jsonlite)
 #library(data.table)
 
 ```
@@ -60,6 +61,36 @@ dir = params$directory
 
 # set sample name
 sample = params$sampleName
+
+```
+
+```{r runReport, include = F}
+
+# identify the ONT sequencing report file
+report_file = list.files(dir, pattern = "^report_.*\\.json$", full.names = TRUE)
+
+# load the run report
+report = fromJSON(report_file)
+
+# extract the relevant information from the sequencing report
+
+## version information
+minknow = report$protocol_run_info$software_versions$minknow$full
+
+basecaller = sub("^([0-9]+\\.[0-9]+\\.[0-9]+).*", "\\1", report$protocol_run_info$software_versions$basecaller_build_version)
+
+args = report$protocol_run_info$args
+idx = which(args == "--basecaller_models")
+model_raw = args[idx + 1]
+model = gsub('\"', "", model_raw)
+model = gsub('=', ": ", model)
+
+## Flow-cell & kit information
+cellType = report$protocol_run_info$user_info$user_specified_product_code
+
+cellID = report$protocol_run_info$user_info$user_specified_flow_cell_id
+
+kitType = report$protocol_run_info$user_info$kit_info
 
 ```
 
@@ -180,6 +211,16 @@ allData = allData %>%
 
 ```
 
+```{r defineFormatting, include = F}
+
+# Define the dimensions for the bar chart based on sample / feature numbers
+barHeight = (1.6 * length(order)) + 2.4
+
+barWidth = (0.2 * length(unique(allData$blast_hit))) + 1.2
+
+```
+
+
 # MUMC+ MMI: 16S ONT
 
 ## Single sample report
@@ -190,24 +231,28 @@ __Sample ID:__ `r sample`
 
 ### Version information:
 
+__MinKNOW version:__ `r minknow` | __Basecaller version:__ `r basecaller`  
+__Basecaller model:__ `r model`.  
+
 __Maastricht bacterial 16S ONT pipeline version:__ 1.2.0
 
 ### Method:
 
 The sample underwent DNA extraction, 16S amplification and sequencing on the Oxford Nanopore GridIon.  
 
-A 10.4.1 flow cell and chemistry was used.  
+__Flow cell type:__ `r cellType` | __flow cell ID:__ `r cellID`  
 
-__Flow cell type:__ placeholder & __flow cell ID:__ placeholder  
-
-__Kit type:__ placeholder & __Kit lot number:__ placeholder  
+__Kit type:__ `r kitType` | __Kit lot number:__ placeholder  
 
 __ONT sequencing barcode - sample:__ `r samplesheet$Barcode[samplesheet$SampleName == sample]`  
 
 __Negative controls:__ `r ntcs$SampleName` from barcodes `r ntcs$Barcode` respectively.  
 
 ### Conclusion:
-###### <<space for text, please replace>>
+
+::: {custom-style="Red highlight"}
+<<Space for text, please replace. See below for detailed results.>>
+:::
 
 ### Results overview
 
@@ -222,7 +267,7 @@ __Negative controls:__ `r ntcs$SampleName` from barcodes `r ntcs$Barcode` respec
 
 `r if (!generaCheck) "###### At least one genus failed to analyse correctly. Please ask the bioinformatician to check the analysis"`
 
-```{r resultsVisualisation, eval = continue, echo = F}
+```{r resultsVisualisation, eval = continue, echo = F, message = F, warning = F, results = "asis", fig.width = barWidth, fig.height = barHeight}
 
 plot = allData %>% 
   ggplot(aes(x = reorder(blast_hit, -speciesReads), y = num_reads, fill = spikeIn)) +
@@ -252,6 +297,12 @@ plot = allData %>%
     plot
 
 ```
+
+::: {custom-style="Table caption"}
+__Note:__ "uncultured bacterium" hits have been re-assigned to the second best BLAST hit if available.  
+Stacked "uncultured bacterium" hits could represent different organisms.  
+For more information see the detailed summary below.  
+:::
 
 ### Detailed summary & QC information
 
