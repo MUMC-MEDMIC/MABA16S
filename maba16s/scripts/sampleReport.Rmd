@@ -190,7 +190,7 @@ allData = allData %>%
     FinalName = case_when(
       # ensure that the spike-in reads are appropriately grouped
       grepl("imtechella", blast_hit, ignore.case = TRUE) ~ "Imtechella",
-      grepl("trueper", blast_hit, ignore.case = TRUE) ~ "Truepera",
+      grepl("truepera", blast_hit, ignore.case = TRUE) ~ "Truepera",
       grepl("allobacillus", blast_hit, ignore.case = TRUE) ~ "Allobacillus",
       
       # try to rename uncultured bacteria if alternative options available
@@ -208,6 +208,30 @@ allData = allData %>%
   mutate(speciesReads = sum(num_reads)) %>%
       ungroup() %>%
   as.data.frame()
+
+```
+
+```{r reformatHits, eval = continue, include = F}
+
+# get all used combinations of FinalName and original genus
+observedPairs = allData %>% select(X1, FinalName) %>% distinct()
+
+# complete the key such that all the above combinations exist for every sample
+completeKeys = observedPairs %>%
+  crossing(SampleName = unique(allData$SampleName))
+
+# join this to the data to ensure that all combinations are represented
+completeData = completeKeys %>%
+  left_join(allData, by = c("X1", "FinalName", "SampleName"))
+
+# turn the data into wide format
+allReads = completeData %>%
+  select(SampleName, speciesReads, X1, FinalName) %>%
+  pivot_wider(id_cols = c(FinalName, X1),
+              names_from = SampleName,
+              values_from = speciesReads,
+              names_sep = "_")          
+
 
 ```
 
@@ -305,6 +329,17 @@ For more information see the detailed summary below.
 :::
 
 ### Detailed summary & QC information
+
+```{r featuresTable, echo = F}
+
+
+```
+
+::: {custom-style="Table caption"}
+__Note:__ The top 1% of blast hits, with the best scoring alignments (bitscore) are retained.  
+Blast hits withing 0.35% of the best scoring alignment (percentage) are retained.  
+In the _blast hits_ column the numbers represent how many hits were retained for that species after the above filter criteria were applied.  
+:::
 
 ```{r qcTable, echo = F}
 
